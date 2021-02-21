@@ -1,0 +1,450 @@
+---
+title: Cross-Checking Two Versions of Budget Files
+author: Jiwan Heo
+date: '2020-08-18'
+tags:
+  - data processing
+---
+
+
+
+<p>Thanks <a href="https://www.youtube.com/channel/UCvYzKBsnJCswiABGRc9h2Eg">Marc</a> for reminding me to write!</p>
+<p>Hey everyone, hope you’re all doing well! Lately, I’ve been spending most of my free time learning to make website designs with CSS. Some people rip of CSS for not being a real programming language, but it’s a tricky language to master! Unlike other languages like Python, with CSS, you really don’t know when something went wrong, unless you understand exactly what the impact of adding an extra line of code will do. This slows me down often, but oh well ¯\<em>(ツ)</em>/¯</p>
+<div id="lets-get-into-it" class="section level2">
+<h2>Let’s get into it!</h2>
+<p>Today, I wanted to share a trick that really saved me a ton of time at work. Without going into too much detail, the task was to verify a file that contains a series of yearly budget numbers against another file that has similar information.</p>
+<p>Seems pretty simple right? Sort the numbers by month, line them up next to each other, and do a “this cell equals that cell” formula, and drag it down?</p>
+<p><img src="wellyes.jpg" width="480" /></p>
+<p>While the first file was in a beautiful format, unfortunately the other one was just too messy for me to select all numbers at once.</p>
+<p>Let me illustrate what I mean.</p>
+</div>
+<div id="data" class="section level2">
+<h2>Data</h2>
+<p>Let’s say we’re looking at next year’s sales quota and forecast at different cities. I’ve set up 5 cities from 2 provinces, with some random data, so we have something to work with. This is my preferred format for pretty much anything. If all data was like this, I probably wouldn’t have a job lol</p>
+<div class="figure"><span id="fig:unnamed-chunk-2"></span>
+<img src="sheet1.PNG" alt="Beautifully formatted sheet" width="206" />
+<p class="caption">
+Figure 1: Beautifully formatted sheet
+</p>
+</div>
+<p>Now look at this sheet. This is what most pivot tables look like, with Province &amp; City as rows, Month as columns, and Sales Quota &amp; Sales Forecast as values. I’ve changed a couple numbers without thinking, so we got some work ahead of us, detecting where they are!</p>
+<div class="figure"><span id="fig:unnamed-chunk-3"></span>
+<img src="sheet2.PNG" alt="Wide-form sheet" width="462" />
+<p class="caption">
+Figure 2: Wide-form sheet
+</p>
+</div>
+<p>The worksheet given to me was a tad messier than this, but you get the idea.</p>
+</div>
+<div id="processing" class="section level2">
+<h2>Processing</h2>
+<p>“wHy dON’t yOu jUsT uSe pIvOtTAblE?”</p>
+<p>idk, I love using R to solve business problems.</p>
+<div id="load-data-into-r" class="section level3">
+<h3>Load data into R</h3>
+<p>I’m only gonna use 2 packages. <code>openxlsx</code> to open Excel, and <code>tidyverse</code> to wrangle.</p>
+<pre class="r"><code>library(openxlsx)
+library(tidyverse)</code></pre>
+<p>Make sure you set the <code>skipEmptyRows</code> &amp; <code>skipEmptyCols</code> to FALSE. Pretty dumb, but the default value is TRUE, so it really throws you off if you’re not aware.</p>
+<p>I like using <code>clean_names()</code> so that all column names are just one word.</p>
+<pre class="r"><code>sheet1 &lt;- read.xlsx(&quot;sheet1.xlsx&quot;, skipEmptyRows = FALSE, skipEmptyCols = FALSE) %&gt;% 
+  janitor::clean_names()
+
+sheet1 %&gt;% head(10)</code></pre>
+<pre><code>##    province    city month sales_quota sales_forecast
+## 1   Alberta Airdrie   Jan          34            100
+## 2   Alberta Airdrie   Feb          13              8
+## 3   Alberta Airdrie   Mar           1             57
+## 4   Alberta Airdrie   Apr          17             79
+## 5   Alberta Airdrie   May          22             60
+## 6   Alberta Airdrie   Jun          32             48
+## 7   Alberta Airdrie   Jul           9             26
+## 8   Alberta Airdrie   Aug          71             18
+## 9   Alberta Airdrie   Sep           9             66
+## 10  Alberta Airdrie   Oct          23             63</code></pre>
+<p>I really wish there was something like <code>head()</code> for columns, but for now, I’ll just print the whole thing</p>
+<pre class="r"><code>sheet2 &lt;- read.xlsx(&quot;sheet2.xlsx&quot;, skipEmptyRows = FALSE, skipEmptyCols = FALSE)
+
+sheet2</code></pre>
+<pre><code>##          X1          X2         Jan            Jan         Feb            Feb
+## 1  Province        City Sales Quota Sales Forecast Sales Quota Sales Forecast
+## 2   Alberta     Airdrie          34            100          13              8
+## 3   Alberta     Calgary          19             48          19             18
+## 4   Alberta    Edmonton          90           &lt;NA&gt;          44             33
+## 5   Alberta       Leduc          55             74        &lt;NA&gt;             86
+## 6   Alberta    Red Deer          92             66          95             50
+## 7   Ontario      Barrie          87             92          82             91
+## 8   Ontario     Toronto          52             57          52             26
+## 9   Ontario      Ottawa          95             40          36             80
+## 10  Ontario      London          20             49          26             33
+## 11  Ontario Mississauga           5             71          74            151
+##            Mar            Mar         Apr            Apr         May
+## 1  Sales Quota Sales Forecast Sales Quota Sales Forecast Sales Quota
+## 2            1             57          17             79          22
+## 3           21             92           7             39          40
+## 4         &lt;NA&gt;             22          54             16          78
+## 5           78             69          21             39           2
+## 6            1             44          55             49           2
+## 7            2             24          16             52          54
+## 8            3             69          71             52          89
+## 9           74             31          48             34           5
+## 10          69           &lt;NA&gt;          65             76          26
+## 11          14             18        &lt;NA&gt;             38          25
+##               May         Jun            Jun         Jul            Jul
+## 1  Sales Forecast Sales Quota Sales Forecast Sales Quota Sales Forecast
+## 2              60          32             48           9             26
+## 3              58          52             73          70              4
+## 4            &lt;NA&gt;           3              4          60              3
+## 5              11          24             56          92             24
+## 6              13          49             14        &lt;NA&gt;             56
+## 7              63          42             67          42             91
+## 8              19          31             15          55             40
+## 9               2        &lt;NA&gt;             67           3             26
+## 10             52          34             35        &lt;NA&gt;             56
+## 11             33          27              8          64             38
+##            Aug            Aug         Sep            Sep         Oct
+## 1  Sales Quota Sales Forecast Sales Quota Sales Forecast Sales Quota
+## 2           71             18           9             66          23
+## 3           76             87          53             57          61
+## 4           64             43          31              2          12
+## 5           58             30          44             35          39
+## 6           56             19          98             50          35
+## 7           97             30          20             18          76
+## 8           19             28          49             22        &lt;NA&gt;
+## 9           67             67        &lt;NA&gt;           &lt;NA&gt;          81
+## 10           1             61          44             30          67
+## 11           6             15          29              9        &lt;NA&gt;
+##               Oct         Nov            Nov         Dec            Dec
+## 1  Sales Forecast Sales Quota Sales Forecast Sales Quota Sales Forecast
+## 2              63          50             96          30             78
+## 3              43        &lt;NA&gt;             84          57             72
+## 4               1          40              2          50             94
+## 5            &lt;NA&gt;          30              1          30             78
+## 6              52          58           &lt;NA&gt;           2             64
+## 7              78          24             32          90             85
+## 8              46          30             40          17              3
+## 9              49          40             29          54           &lt;NA&gt;
+## 10             36           4             40        &lt;NA&gt;              1
+## 11              2          99             54          92             24</code></pre>
+</div>
+<div id="sheet1-clean" class="section level3">
+<h3>Sheet1 Clean</h3>
+<p>Not much to clean here, but I’ll turn all my numbers (quota &amp; forecast) into a key-value format. This will be useful when we make charts later!</p>
+<pre class="r"><code>sheet1 &lt;- sheet1 %&gt;% 
+  gather(type, value, -c(province, city, month))
+
+sheet1 %&gt;% head(10)</code></pre>
+<pre><code>##    province    city month        type value
+## 1   Alberta Airdrie   Jan sales_quota    34
+## 2   Alberta Airdrie   Feb sales_quota    13
+## 3   Alberta Airdrie   Mar sales_quota     1
+## 4   Alberta Airdrie   Apr sales_quota    17
+## 5   Alberta Airdrie   May sales_quota    22
+## 6   Alberta Airdrie   Jun sales_quota    32
+## 7   Alberta Airdrie   Jul sales_quota     9
+## 8   Alberta Airdrie   Aug sales_quota    71
+## 9   Alberta Airdrie   Sep sales_quota     9
+## 10  Alberta Airdrie   Oct sales_quota    23</code></pre>
+<p>You kinda see what’s going on here, the column names are in the “type” column, and the corresponding value is in the “value” column. If I printed the end of this, it’ll show sales_forecast too. Like so:</p>
+<pre class="r"><code>sheet1 %&gt;% tail(10)</code></pre>
+<pre><code>##     province        city month           type value
+## 231  Ontario Mississauga   Mar sales_forecast    18
+## 232  Ontario Mississauga   Apr sales_forecast    38
+## 233  Ontario Mississauga   May sales_forecast    33
+## 234  Ontario Mississauga   Jun sales_forecast     8
+## 235  Ontario Mississauga   Jul sales_forecast    38
+## 236  Ontario Mississauga   Aug sales_forecast    15
+## 237  Ontario Mississauga   Sep sales_forecast     9
+## 238  Ontario Mississauga   Oct sales_forecast     5
+## 239  Ontario Mississauga   Nov sales_forecast    54
+## 240  Ontario Mississauga   Dec sales_forecast    88</code></pre>
+<p>This is all I’m going to do! Let’s turn sheet2 like this</p>
+</div>
+<div id="sheet2-clean" class="section level3">
+<h3>Sheet2 Clean</h3>
+<p>Remember how sheet2 looked like up top? I’ll print the first few columns, now that you know what it looks like, no point wasting space. When you see the below code popping up again, I’m just printing the first 6 columns.</p>
+<pre class="r"><code>sheet2[, 1:6]</code></pre>
+<pre><code>##          X1          X2         Jan          Jan.1         Feb          Feb.1
+## 1  Province        City Sales Quota Sales Forecast Sales Quota Sales Forecast
+## 2   Alberta     Airdrie          34            100          13              8
+## 3   Alberta     Calgary          19             48          19             18
+## 4   Alberta    Edmonton          90           &lt;NA&gt;          44             33
+## 5   Alberta       Leduc          55             74        &lt;NA&gt;             86
+## 6   Alberta    Red Deer          92             66          95             50
+## 7   Ontario      Barrie          87             92          82             91
+## 8   Ontario     Toronto          52             57          52             26
+## 9   Ontario      Ottawa          95             40          36             80
+## 10  Ontario      London          20             49          26             33
+## 11  Ontario Mississauga           5             71          74            151</code></pre>
+<div id="column-names" class="section level4">
+<h4>Column Names</h4>
+<p>I really don’t like how the first two column names are useless (X1, X2). These are just random names that R assigns when there is no column name explicitly specified.</p>
+<p>Let’s get rid of them. The idea is to combine the column names and the first row together, set that as the column name, and get rid of the first row.</p>
+<pre class="r"><code>new_col_names &lt;- paste(sheet2[1,], names(sheet2), sep = &quot;-&quot;)
+
+new_col_names</code></pre>
+<pre><code>##  [1] &quot;Province-X1&quot;        &quot;City-X2&quot;            &quot;Sales Quota-Jan&quot;   
+##  [4] &quot;Sales Forecast-Jan&quot; &quot;Sales Quota-Feb&quot;    &quot;Sales Forecast-Feb&quot;
+##  [7] &quot;Sales Quota-Mar&quot;    &quot;Sales Forecast-Mar&quot; &quot;Sales Quota-Apr&quot;   
+## [10] &quot;Sales Forecast-Apr&quot; &quot;Sales Quota-May&quot;    &quot;Sales Forecast-May&quot;
+## [13] &quot;Sales Quota-Jun&quot;    &quot;Sales Forecast-Jun&quot; &quot;Sales Quota-Jul&quot;   
+## [16] &quot;Sales Forecast-Jul&quot; &quot;Sales Quota-Aug&quot;    &quot;Sales Forecast-Aug&quot;
+## [19] &quot;Sales Quota-Sep&quot;    &quot;Sales Forecast-Sep&quot; &quot;Sales Quota-Oct&quot;   
+## [22] &quot;Sales Forecast-Oct&quot; &quot;Sales Quota-Nov&quot;    &quot;Sales Forecast-Nov&quot;
+## [25] &quot;Sales Quota-Dec&quot;    &quot;Sales Forecast-Dec&quot;</code></pre>
+<p>Now that we have the new column names, let’s set this list as the column names, and get rid of the first row. (Second row to last row)</p>
+<pre class="r"><code>names(sheet2) &lt;- new_col_names
+
+sheet2 &lt;- sheet2[2:nrow(sheet2),]
+
+sheet2[, 1:6]</code></pre>
+<pre><code>##    Province-X1     City-X2 Sales Quota-Jan Sales Forecast-Jan Sales Quota-Feb
+## 2      Alberta     Airdrie              34                100              13
+## 3      Alberta     Calgary              19                 48              19
+## 4      Alberta    Edmonton              90               &lt;NA&gt;              44
+## 5      Alberta       Leduc              55                 74            &lt;NA&gt;
+## 6      Alberta    Red Deer              92                 66              95
+## 7      Ontario      Barrie              87                 92              82
+## 8      Ontario     Toronto              52                 57              52
+## 9      Ontario      Ottawa              95                 40              36
+## 10     Ontario      London              20                 49              26
+## 11     Ontario Mississauga               5                 71              74
+##    Sales Forecast-Feb
+## 2                   8
+## 3                  18
+## 4                  33
+## 5                  86
+## 6                  50
+## 7                  91
+## 8                  26
+## 9                  80
+## 10                 33
+## 11                151</code></pre>
+<p>I’m going to manipulate the column names later on except the first two, so might as well clean the good ones now.</p>
+<pre class="r"><code>names(sheet2)[1:2] &lt;- c(&quot;province&quot;, &quot;city&quot;)
+
+sheet2[, 1:6]</code></pre>
+<pre><code>##    province        city Sales Quota-Jan Sales Forecast-Jan Sales Quota-Feb
+## 2   Alberta     Airdrie              34                100              13
+## 3   Alberta     Calgary              19                 48              19
+## 4   Alberta    Edmonton              90               &lt;NA&gt;              44
+## 5   Alberta       Leduc              55                 74            &lt;NA&gt;
+## 6   Alberta    Red Deer              92                 66              95
+## 7   Ontario      Barrie              87                 92              82
+## 8   Ontario     Toronto              52                 57              52
+## 9   Ontario      Ottawa              95                 40              36
+## 10  Ontario      London              20                 49              26
+## 11  Ontario Mississauga               5                 71              74
+##    Sales Forecast-Feb
+## 2                   8
+## 3                  18
+## 4                  33
+## 5                  86
+## 6                  50
+## 7                  91
+## 8                  26
+## 9                  80
+## 10                 33
+## 11                151</code></pre>
+</div>
+<div id="extract-and-transform-the-dreaded-buzzword-etl-haha" class="section level4">
+<h4>Extract and Transform (The dreaded buzzword “ETL” haha!)</h4>
+<p>We still haven’t created “month”, “type” columns like sheet1 :cry: Or, if you’re a cup-is-half-full type person, at least we’ve got “province” &amp; “city” columns! :smile:</p>
+<p>This is exactly what leads into the next step. Let’s turn everything else that is not “province”, or “city”, into a key-value format. Here are the first 25 rows.</p>
+<pre class="r"><code>sheet2 &lt;- sheet2 %&gt;% 
+  gather(key, value, -c(province, city))
+
+sheet2 %&gt;% head(25)</code></pre>
+<pre><code>##    province        city                key value
+## 1   Alberta     Airdrie    Sales Quota-Jan    34
+## 2   Alberta     Calgary    Sales Quota-Jan    19
+## 3   Alberta    Edmonton    Sales Quota-Jan    90
+## 4   Alberta       Leduc    Sales Quota-Jan    55
+## 5   Alberta    Red Deer    Sales Quota-Jan    92
+## 6   Ontario      Barrie    Sales Quota-Jan    87
+## 7   Ontario     Toronto    Sales Quota-Jan    52
+## 8   Ontario      Ottawa    Sales Quota-Jan    95
+## 9   Ontario      London    Sales Quota-Jan    20
+## 10  Ontario Mississauga    Sales Quota-Jan     5
+## 11  Alberta     Airdrie Sales Forecast-Jan   100
+## 12  Alberta     Calgary Sales Forecast-Jan    48
+## 13  Alberta    Edmonton Sales Forecast-Jan  &lt;NA&gt;
+## 14  Alberta       Leduc Sales Forecast-Jan    74
+## 15  Alberta    Red Deer Sales Forecast-Jan    66
+## 16  Ontario      Barrie Sales Forecast-Jan    92
+## 17  Ontario     Toronto Sales Forecast-Jan    57
+## 18  Ontario      Ottawa Sales Forecast-Jan    40
+## 19  Ontario      London Sales Forecast-Jan    49
+## 20  Ontario Mississauga Sales Forecast-Jan    71
+## 21  Alberta     Airdrie    Sales Quota-Feb    13
+## 22  Alberta     Calgary    Sales Quota-Feb    19
+## 23  Alberta    Edmonton    Sales Quota-Feb    44
+## 24  Alberta       Leduc    Sales Quota-Feb  &lt;NA&gt;
+## 25  Alberta    Red Deer    Sales Quota-Feb    95</code></pre>
+<p>Here’s the beauty of processing.</p>
+<p>We <strong>separate</strong> the key column into two new columns, by splitting the <code>-</code></p>
+<pre class="r"><code>sheet2 &lt;- sheet2 %&gt;% 
+  separate(key, into = c(&quot;type&quot;, &quot;month&quot;), sep = &quot;\\-&quot;)
+
+sheet2 %&gt;% head(10)</code></pre>
+<pre><code>##    province        city        type month value
+## 1   Alberta     Airdrie Sales Quota   Jan    34
+## 2   Alberta     Calgary Sales Quota   Jan    19
+## 3   Alberta    Edmonton Sales Quota   Jan    90
+## 4   Alberta       Leduc Sales Quota   Jan    55
+## 5   Alberta    Red Deer Sales Quota   Jan    92
+## 6   Ontario      Barrie Sales Quota   Jan    87
+## 7   Ontario     Toronto Sales Quota   Jan    52
+## 8   Ontario      Ottawa Sales Quota   Jan    95
+## 9   Ontario      London Sales Quota   Jan    20
+## 10  Ontario Mississauga Sales Quota   Jan     5</code></pre>
+<p>OK! It looks really similar to sheet1 now.</p>
+</div>
+<div id="final-touches" class="section level4">
+<h4>Final touches</h4>
+<p>Just a couple more steps left in processing. Let’s remind ourselves what sheet1 looks like</p>
+<pre class="r"><code>sheet1 %&gt;% head(10)</code></pre>
+<pre><code>##    province    city month        type value
+## 1   Alberta Airdrie   Jan sales_quota    34
+## 2   Alberta Airdrie   Feb sales_quota    13
+## 3   Alberta Airdrie   Mar sales_quota     1
+## 4   Alberta Airdrie   Apr sales_quota    17
+## 5   Alberta Airdrie   May sales_quota    22
+## 6   Alberta Airdrie   Jun sales_quota    32
+## 7   Alberta Airdrie   Jul sales_quota     9
+## 8   Alberta Airdrie   Aug sales_quota    71
+## 9   Alberta Airdrie   Sep sales_quota     9
+## 10  Alberta Airdrie   Oct sales_quota    23</code></pre>
+<p>We need to clean the word “Sales Quota”, and “Sales Forecast” into lowercase</p>
+<pre class="r"><code>sheet2 &lt;- sheet2 %&gt;% 
+  mutate(type = str_replace(tolower(type), &quot;\\s&quot;, &quot;\\_&quot;))
+
+sheet2 %&gt;% head(10)</code></pre>
+<pre><code>##    province        city        type month value
+## 1   Alberta     Airdrie sales_quota   Jan    34
+## 2   Alberta     Calgary sales_quota   Jan    19
+## 3   Alberta    Edmonton sales_quota   Jan    90
+## 4   Alberta       Leduc sales_quota   Jan    55
+## 5   Alberta    Red Deer sales_quota   Jan    92
+## 6   Ontario      Barrie sales_quota   Jan    87
+## 7   Ontario     Toronto sales_quota   Jan    52
+## 8   Ontario      Ottawa sales_quota   Jan    95
+## 9   Ontario      London sales_quota   Jan    20
+## 10  Ontario Mississauga sales_quota   Jan     5</code></pre>
+<p>Also, I’m going to change the name of the column “value” into something that is not “value”, because that name already exists in sheet1, so it collides when they join, as you’ll see.</p>
+<pre class="r"><code>sheet2 &lt;- sheet2 %&gt;% 
+  rename(sheet2_value = value)
+
+sheet2 %&gt;% head(10)</code></pre>
+<pre><code>##    province        city        type month sheet2_value
+## 1   Alberta     Airdrie sales_quota   Jan           34
+## 2   Alberta     Calgary sales_quota   Jan           19
+## 3   Alberta    Edmonton sales_quota   Jan           90
+## 4   Alberta       Leduc sales_quota   Jan           55
+## 5   Alberta    Red Deer sales_quota   Jan           92
+## 6   Ontario      Barrie sales_quota   Jan           87
+## 7   Ontario     Toronto sales_quota   Jan           52
+## 8   Ontario      Ottawa sales_quota   Jan           95
+## 9   Ontario      London sales_quota   Jan           20
+## 10  Ontario Mississauga sales_quota   Jan            5</code></pre>
+<p>That’s it for processing raw inputs. Checking their dimensions give us the mental check.</p>
+<pre class="r"><code>dim(sheet1)</code></pre>
+<pre><code>## [1] 240   5</code></pre>
+<pre class="r"><code>dim(sheet2)</code></pre>
+<pre><code>## [1] 240   5</code></pre>
+</div>
+</div>
+<div id="join-two-tables" class="section level3">
+<h3>Join Two Tables</h3>
+<p>I recommend left-joining the bigger set with the smaller set. In this scenario, there’s no discrepancy btw tow tables. So I can use inner-join, but I’m still gonna use left-join.</p>
+<pre class="r"><code>joined &lt;- sheet1 %&gt;% 
+  left_join(sheet2, by = c(&quot;province&quot;, &quot;city&quot;, &quot;type&quot;, &quot;month&quot;))
+
+joined %&gt;% head(10)</code></pre>
+<pre><code>##    province    city month        type value sheet2_value
+## 1   Alberta Airdrie   Jan sales_quota    34           34
+## 2   Alberta Airdrie   Feb sales_quota    13           13
+## 3   Alberta Airdrie   Mar sales_quota     1            1
+## 4   Alberta Airdrie   Apr sales_quota    17           17
+## 5   Alberta Airdrie   May sales_quota    22           22
+## 6   Alberta Airdrie   Jun sales_quota    32           32
+## 7   Alberta Airdrie   Jul sales_quota     9            9
+## 8   Alberta Airdrie   Aug sales_quota    71           71
+## 9   Alberta Airdrie   Sep sales_quota     9            9
+## 10  Alberta Airdrie   Oct sales_quota    23           23</code></pre>
+<p>And Voila, we have a dataframe that has sheet1 value in one column, and sheet 2 value in the other column!</p>
+<p>Now, if we make a column that checks if two values are equal to each other, we can count it, and do other stuff with it.</p>
+<p>Also, let’s put in an iferror.</p>
+<pre class="r"><code>joined &lt;- joined %&gt;% 
+  mutate(is_match = value == sheet2_value,
+         is_match = replace_na(is_match, FALSE)) 
+  
+
+joined %&gt;% head(10)</code></pre>
+<pre><code>##    province    city month        type value sheet2_value is_match
+## 1   Alberta Airdrie   Jan sales_quota    34           34     TRUE
+## 2   Alberta Airdrie   Feb sales_quota    13           13     TRUE
+## 3   Alberta Airdrie   Mar sales_quota     1            1     TRUE
+## 4   Alberta Airdrie   Apr sales_quota    17           17     TRUE
+## 5   Alberta Airdrie   May sales_quota    22           22     TRUE
+## 6   Alberta Airdrie   Jun sales_quota    32           32     TRUE
+## 7   Alberta Airdrie   Jul sales_quota     9            9     TRUE
+## 8   Alberta Airdrie   Aug sales_quota    71           71     TRUE
+## 9   Alberta Airdrie   Sep sales_quota     9            9     TRUE
+## 10  Alberta Airdrie   Oct sales_quota    23           23     TRUE</code></pre>
+<p>Now we’re ready to make some analysis &amp; viz!</p>
+</div>
+</div>
+<div id="analysis-and-visualization" class="section level2">
+<h2>Analysis and Visualization</h2>
+<p>First of all, how many are incorrect?</p>
+<pre class="r"><code>joined %&gt;% summarize(mean(is_match == FALSE))</code></pre>
+<pre><code>##   mean(is_match == FALSE)
+## 1               0.2208333</code></pre>
+<p>22%! I must have changed a lot!</p>
+<p>I might have talked about this already, but <code>summarize -&gt; mean -&gt; boolean</code> is a neat trick to count the percentage of rows that meet the boolean.</p>
+<p>While we’re at is, let’s see wow many wrong’s were caused by missing values in the second sheet?</p>
+<pre class="r"><code>joined %&gt;% 
+  filter(is_match == FALSE) %&gt;% 
+  summarize(mean(is.na(sheet2_value)))</code></pre>
+<pre><code>##   mean(is.na(sheet2_value))
+## 1                 0.3396226</code></pre>
+<p>This is super valuable info. It tells me “of the 22% discrepancies btw the two files, 34% come from missing data in the second file.”</p>
+<p>Anyways, I like using <code>count()</code> to quickly cycle between visualizations. Some questions I might be asking myself are:</p>
+<p>Q1: Where were the wrong’s?</p>
+<p>A1: London and Edmonton.</p>
+<pre class="r"><code>theme_set(theme_light())
+
+joined %&gt;% 
+  filter(is_match == FALSE) %&gt;% 
+  count(province, city) %&gt;% 
+  mutate(city = fct_reorder(city, n)) %&gt;% 
+  ggplot(aes(city, n, fill = province)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = &quot;Inconsistency between two files&quot;,
+       x = &quot;City&quot;,
+       y = &quot;# Mismatches&quot;)</code></pre>
+<p><img src="/post/2020-08-18-cross-checking-two-versions-of-budget-files/index_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
+<p>Q2: Was there a certain month that was forecast or budget wereparticularly wrong?</p>
+<p>A2: Fourth quarter was brutal.</p>
+<pre class="r"><code>theme_set(theme_light())
+
+joined %&gt;% 
+  filter(is_match == FALSE) %&gt;% 
+  count(month) %&gt;% 
+  mutate(month = fct_reorder(month, n)) %&gt;% 
+  ggplot(aes(month, n)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = &quot;Inconsistency between two files&quot;,
+       x = &quot;Months&quot;,
+       y = &quot;# Mismatches&quot;)</code></pre>
+<p><img src="/post/2020-08-18-cross-checking-two-versions-of-budget-files/index_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>So yea, here’s how I would tackle these types of problems. A SQL-ly solution, that makes use of some of the beautiful functions in <code>tidyverse</code>!</p>
+<p>I like this solution because once you set this up, and as long as the data format doesn’t change in either files, you can test a bunch of different files. Maybe you went back and filled in the missing values. Then, your accuracy goes up, and maybe then, you can focus on one city at a time.</p>
+<p>Thanks for sticking around, I had a ton of fun doing this!</p>
+</div>

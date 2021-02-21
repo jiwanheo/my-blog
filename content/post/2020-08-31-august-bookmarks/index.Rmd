@@ -1,0 +1,30 @@
+---
+title: August Bookmarks
+author: Jiwan Heo
+date: '2020-08-31'
+tags:
+  - bookmarks
+  - webdev
+---
+
+For someone who's learning CSS, I should really start styling this blog.
+
+## Web dev related
+
+- https://www.youtube.com/watch?v=sppSnBQVt0k&list=WL&index=11&t=4774s Where it all started
+- https://github.com/getify/You-Dont-Know-JS
+- https://eloquentjavascript.net/
+- https://codemyui.com/
+- https://tevko.github.io/practice/
+- https://every-layout.dev/
+- https://htmlpreview.github.io/ This is one of my favourites, b/c I can quickly share htmls
+- https://www.smashingmagazine.com/articles/
+- https://rachelandrew.co.uk/archives/2020/04/07/making-things-better/
+- https://ohhelloana.blog/ I love her blog, this is where I saw the bookmarks idea first!
+- https://uigradients.com/#ColorsOfSky
+- https://vineethtrv.github.io/loader/
+- https://website-gallery.now.sh/
+- https://medium.com/javascript-in-plain-english/creating-3d-layout-with-css-using-grid-perspective-65cd03dfc56c Her work looks really interesting! This is on my to-learn list
+- https://codepen.io/collection/XzePLw
+
+Starting to use a little bit of Javascript. Mostly to add a class to an element when clicked.

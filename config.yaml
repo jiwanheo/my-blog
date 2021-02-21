@@ -1,0 +1,53 @@
+baseURL: https://jiwanheo.rbind.io/
+languageCode: en
+DefaultContentLanguage: en
+title: Blog of Jiwan Heo
+theme: anatole
+summarylength: 10
+enableEmoji: yes
+enableRobotsTXT: yes
+pygmentsUseClasses: yes
+pygmentsCodeFences: yes
+pygmentsCodefencesGuessSyntax: yes
+params:
+  author: Jiwan Heo
+  title: Jiwan Heo
+  customCss: []
+  customJs: []
+  doNotLoadAnimations: true
+  favicon: favicons/
+  keywords: ''
+  mainSections: post
+  displayMode: dark
+  singleDateFormat: "2006-01-02"
+  indexDateFormat: "2006-01-02"
+  listDateFormat: "Jan 2"
+  disqusShortname: "jiwanheo"
+  math:
+    enable: no
+    use: katex
+  profilePicture: images/avatar.png
+  socialIcons:
+    - icon: fab fa-linkedin
+      title: Linkedin
+      url: https://www.linkedin.com/in/jiwanheo/
+    - icon: fab fa-github
+      title: GitHub
+      url: https://www.github.com/jiwanheo
+    - icon: fas fa-envelope
+      title: e-mail
+      url: mailto:jiwanheo123@gmail.com
+menu:
+  main:
+    - identifier: home
+      name: Home
+      url: /
+      weight: 100
+    - identifier: posts
+      name: Posts
+      url: /post/
+      weight: 200
+    - identifier: about
+      name: About
+      url: /about/
+      weight: 300

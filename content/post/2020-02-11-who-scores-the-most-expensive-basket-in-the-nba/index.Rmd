@@ -1,0 +1,126 @@
+---
+title: Who Scores the Most Expensive Basket in the NBA?
+author: Jiwan Heo
+date: '2020-02-11'
+tags:
+  - NBA
+  - data processing
+---
+
+Hey! Just a quick post after work. A couple weeks ago, my roommate showed me a tweet that listed soccer players with the most expensive contracts. (I think it was the Premier League?) Of course, I wanted to make something similar with NBA players. I made some quick bar graphs that night showing $ earned per made basket, which was cool, but I wanted to make it a little better. 
+
+In this post, I'm going to  a good old bar graph. Let's dive in to this!
+
+I have three dataframes that I pulled from the `nbastatR` package. 
+
+```{r message = FALSE, warning = FALSE}
+library(tidyverse)
+
+df_salary <- read_csv("salary2020.csv")
+df_salary
+```
+
+```{r message = FALSE, warning = FALSE}
+df_stats <- read_csv("all2020.csv") %>% 
+  select(namePlayer, slugTeam, fgm) 
+df_stats
+```
+
+```{r message = FALSE, warning = FALSE}
+photos <- read_csv("photos.csv") %>% 
+  select(namePlayer, urlPlayerHeadshot)
+photos
+```
+
+Now that I've extracted the info I'm interested in, (field goal made and player photos) Let's join them into a single dataframe.
+
+```{r message = FALSE, warning = FALSE}
+salaried_stats <- df_stats %>% 
+  inner_join(df_salary, by = "namePlayer") %>% 
+  inner_join(photos, by = "namePlayer")
+salaried_stats
+```
+
+## Making the graphs
+
+Since many players don't get to play in the NBA, I've filtered for only players that scored at least 100 baskets. Then, I can calculate the $ made per basket.
+
+```{r message = FALSE, warning = FALSE}
+per_bucket <- salaried_stats %>% 
+  mutate(money_per_buckets = amountContract / fgm) %>% 
+  filter(fgm >= 100)
+per_bucket
+```
+
+I wonder what the league-wide average was?
+
+```{r message = FALSE, warning = FALSE}
+library(scales)
+avg_bucket_pay <- as.numeric(per_bucket %>% summarize(mean(money_per_buckets)))
+dollar(avg_bucket_pay)
+```
+
+That's a lot of money! If you make a basket in the NBA, you're pretty much making as much as a regular Joe will make in an entire year!
+
+### Most expensive baskets
+
+I arranged the dataframe in a descending order of $ per basket, took top 10, and made a bar graph with `geom_col`. After that, I used `geom_image` from `ggimage` package to plot a player's headshot at the end of the bar graphs. 
+
+```{r message = FALSE, warning = FALSE, out.width = "100%"}
+library(ggimage)
+theme_set(theme_light())
+
+per_bucket %>% 
+  arrange(desc(money_per_buckets)) %>% 
+  slice(1:10) %>% 
+  mutate(namePlayer = fct_reorder(namePlayer, money_per_buckets)) %>% 
+  ggplot(aes(namePlayer, money_per_buckets, fill = fgm)) +
+  geom_col() +
+  geom_image(aes(image = urlPlayerHeadshot), size = 0.1) + 
+  geom_hline(yintercept = avg_bucket_pay, linetype = "dashed") +
+  geom_text(aes(3, avg_bucket_pay, label = "League Avg. $48,838")) +
+  coord_flip() +
+  scale_fill_gradient2(low = "blue", mid = "pink", high = "red", midpoint = 200) +
+  scale_y_continuous(labels = dollar_format()) +
+  labs( title = "Who scores the most expensive buckets in 2020 NBA season?",
+        subtitle = "At least 100 Fg Made this season",
+        x = "",
+        y = "$ per field goal made",
+        fill = "# made field goal") 
+```
+
+Don't really see too obvious a pattern. Some of them are defense-first guys (Green, Bazemore & Biyombo), while some are legit scorers (Hayward, George & Lowry). Now, let's look at the most economically friendly contracts.
+
+### The Cheapest baskets
+
+This is basically the same plot as above, but I took the ascending order of $ per basket instead.
+
+```{r message = FALSE, warning = FALSE, out.width = "100%"}
+per_bucket %>% 
+  arrange((money_per_buckets)) %>% 
+  slice(1:10) %>% 
+  mutate(namePlayer = fct_reorder(namePlayer, -money_per_buckets)) %>% 
+  ggplot(aes(namePlayer, money_per_buckets, fill = fgm)) +
+  geom_col() +
+  geom_image(aes(image = urlPlayerHeadshot), size = 0.1) + 
+  geom_hline(yintercept = avg_bucket_pay, linetype = "dashed") +
+  geom_text(aes(3, 30000, label = "League Avg. $48,838")) +
+  coord_flip() +
+  scale_fill_gradient2(low = "blue", mid = "pink", high = "red", midpoint = 200) +
+  scale_y_continuous(labels = dollar_format()) +
+  labs( title = "Who scores the most economical buckets in 2020 NBA season?",
+                subtitle = "At least 100 Fg Made this season",
+  x = "",
+  y = "$ per field goal made",
+  fill = "# made field goal") 
+```
+
+Obvious pattern is the youth of this group of players. All of these guys are in their early-mid 20s, who are under their rookie contracts. We see Toronto's Pascal Siakam & Terrance Davis in the mix, which is nice to see from a Raps fan. Furthermore, there are 4 Golden State Warriors (5 if you count Glenn Robinson who got traded this month). This makes sense, as Golden State's stars have been injured all season, forcing them to play their inexperienced players. 
+
+### Ky Bowman
+
+You may have noticed Ky Bowman's ubsurdly low \$ per basket. He was on a 45-day 2-way contract, which means he can go back and forth between an NBA team and a farm team. His salary is less than \$80,000, which I know some of you make more than! Unfortunately for him, he plays in the city of San Francisco, which is notorious for its expensive rent. [There was a rumor that he may qualify for a low income housing](https://www.basketballnetwork.net/ky-bowman-may-qualify-for-low-income-housing-in-san-francisco/), which turned out not to be true. However, due to his performance as of late, [the Warrios signed him to a multi-year contract](https://www.goldenstateofmind.com/2020/2/6/21127304/2020-nba-news-golden-state-warriors-sign-ky-bowman-dangelo-russell-andrew-wiggins-trade)
+
+## Conclusion
+
+I had a super fun time writing this post, and learned a couple of new tricks. One thing I could do next time, is to investigate if there is a relationship between the number of efficient contracts to team performance. Maybe I can count the number of players with below league average $ per basket, and use that as a variable to predict the number of wins.

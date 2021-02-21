@@ -1,0 +1,21 @@
+---
+title: September Bookmarks
+author: Jiwan Heo
+date: '2020-09-30'
+tags:
+  - bookmarks
+  - webdev
+---
+
+Haven't been coding too much outside work lately. I've been reading this book "Thinking fast and slow" by Daniel Kahneman. Pretty good book so far, but I'm in the slow stretch right now haha! Trying to read at least half an hour everyday, which is like 10 pages for me, and I have 200 pages left, so hopefully I finish the book this month! 
+
+Also, I've been cooking a fair amount of new food. Mostly Italian food, but I'm trying to semi-adopt the Meditarranean diet, which is basically eating tons of veggies, fish and less red meat. I encourage everyone to try it! It's a healthy principle without taking away too much fun :)
+
+- https://www.interaction-design.org/literature/topics/gestalt-principles
+- https://blog.datawrapper.de/weeklychart-logscale/
+- https://lisacharlotterost.de/ Love this blog. So much practical tips!
+- https://blog.datawrapper.de/beautifulcolors/
+- https://medium.com/free-code-camp/we-fired-our-top-talent-best-decision-we-ever-made-4c0a99728fde This post was really cool. "Rick" is an interesting concept. Let's try not to be one, but the comment section is where the real discussion happens, so make sure to check it out!
+- https://www.youtube.com/watch?v=C13JC_YP2Q8&feature=youtu.be - Linda is great. Her recommendation of the book "Thinking fast and slow" is what I'm reading right now.
+- https://medium.economist.com/why-you-sometimes-need-to-break-the-rules-in-data-viz-4d8ece284919
+- https://gabriellew.ee/

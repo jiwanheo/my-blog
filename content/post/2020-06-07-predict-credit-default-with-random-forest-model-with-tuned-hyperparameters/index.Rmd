@@ -1,0 +1,342 @@
+---
+title: Predict Credit Default with Random Forest Model with Tuned Hyperparameters
+author: Jiwan Heo
+date: '2020-06-07'
+tags:
+  - stats
+---
+
+> I just want to focus on writing about implementing the workflow of this algorithm in R, so will keep the explanation very brief. However, these are some excellent articles that I referenced on [hyperparameters](https://towardsdatascience.com/understanding-hyperparameters-and-its-optimisation-techniques-f0debba07568), [random forest](https://towardsdatascience.com/understanding-random-forest-58381e0602d2) and [combining them](https://towardsdatascience.com/hyperparameter-tuning-the-random-forest-in-python-using-scikit-learn-28d2aa77dd74).
+
+Found this UCI Machine Learning Repo dataset containing [Portuguese bank data](https://www.kaggle.com/yufengsui/portuguese-bank-marketing-data-set) from 2009. Its original focus was to determine how successful their marketing campaigns were (to get people to deposit money). But, it has a lot of variables that I wanted to use to tell another story with this dataset!
+
+# Background terminology
+
+## Random foreset
+
+Random Forest is a classification/regression algorithm that makes use of _many decision trees that act as a committee_ making decisions by majority vote. The most important detail is the __uncorrelated-ness between trees__. By creating many, many decision trees that don't look like each other, the random forrest "hedges" risks of getting the wrong prediction. If one tree messes up, but many other trees with completely different features get it right, the initial tree is less guilty :) Much like a diversified investment portfolio. On top of this, to ensure even more randomness, decision crieria at each nodes of trees are decided by randomly chosen variables.
+
+## Tuning hyperparameters
+
+Hyperparameters refer to the settings of a training process. These must be set by a human before training. In case of what we're looking at today in a random forest, 
+
+- Number of trees
+- Number of features allowed in nodes
+- Minimum number of data points in a node that qualifies a split.
+
+On the other hand, a parameter is something that a training process teaches itself, such as slope/intercept in linear models and coefficients in logistic models.
+
+## Grid search & cross validation
+
+Kinda sounds very brute force-y, but tuning hyperparameters requires trying as many combinations possible and picking the best specs. To do this we're going to use a technique called "Grid Search" to achieve this.
+
+Finally, we'll use resampling/subsampling methods like bootstrap or cross-validation to add randomness to the training dataset. I don't quite fully understand the benefits/downsides of choosing one over the other, but I'm going to use cross-validation for this post.
+
+# Let's build the model! 
+
+Quickly cleaned column names and gave row id's.
+
+```{r message = FALSE, warning = FALSE}
+library(tidyverse)
+library(tidymodels)
+theme_set(theme_light())
+
+bank <- read_csv("bank_cleaned.csv") %>% 
+  janitor::clean_names() %>% 
+  rename(id = x1)
+
+bank_rough <- bank %>%
+  select(-response_binary) %>% 
+  mutate_if(is.character, factor)
+
+bank_rough
+```
+
+## Quick EDA
+
+This is something I like to do with numeric data. So I took all columns that are of class `dbl`, pivoted the dataframe, and then made a histogram for each variable.
+
+```{r message = FALSE, warning = FALSE}
+bank_rough %>% 
+  select_if(is.double) %>% 
+  select(-id) %>% 
+  pivot_longer(age:previous) %>% 
+  ggplot(aes(value)) +
+  geom_histogram() +
+  facet_wrap(~name, scales = "free")
+```
+
+Interesting to see there's negative balances, that's probably gonna be a major predictor.
+
+
+For the columns that weren't selected, I'm going to do the exact same thing as above, but with column charts. This is a trick I learned recently. The powerful `reorder_within` & `scale_y_reordered` functions from the `tidytext` package makes it really easy to get a grasp our data.
+
+```{r}
+library(tidytext)
+
+bank_rough %>% 
+  select_if(is.factor) %>% 
+  mutate_all(as.character) %>% 
+  pivot_longer(job:response) %>% 
+  count(name, value) %>% 
+  mutate(value = reorder_within(value, n, name)) %>% 
+  ggplot(aes(n, value, fill = value)) +
+  geom_col() +
+  theme(legend.position = "none") +
+  facet_wrap(~name, scales = "free") +
+  scale_y_reordered()
+```
+
+Now that we've seen all variables in this dataset, I'm going to take these variables that I think are important.
+
+```{r}
+bank_proc <- bank_rough %>% 
+  select(id, education, default, housing, job, loan, marital, age, balance)
+```
+
+# Model Building
+
+Let's set split our data into training/testing sets. "strata" argument just locks in the proportions of class, so that both training and testing sets have the same % mix of default and non-defaults.
+```{r message = FALSE, warning = FALSE}
+library(tidymodels)
+set.seed(123)
+
+bank_split <- initial_split(bank_proc, strata = housing)
+bank_train <- training(bank_split)
+bank_test <- testing(bank_split)
+```
+
+I am going to tune our model twice. This tuning comes in after setting the recipe, algorithm specs, workflow, and then a cv-set. In the first tuning, I'm going to randomly select 20 combinations of hyperparameters (`mtry` and `min_n`), and then I'll look at the result, and then narrow down the range of the combinations and tune once again. We're going to do this the tidy way, with `tidymodels`. I'm excited to see what we can do with this!
+
+## 1. Recipe
+
+In `tidymodels`, a `recipe` works much like a cooking recipe. You first say what you're going to cook (credit default explained by all variables from bank_train), and then add a bunch of "steps" you need to finish cooking. A recipe is not trained with any data yet, it's just some specifications to the data before it's fed into the model! Some steps we took are:
+
+1. `update_role`: We just said the `id` column is literally an id, so don't use as a predictor.
+2. `step_other`: take a column, and an item within that column doesn't come up frequently enough. I thought there were too many jobs, so we'll lump the least frequent ones as "other".
+3. `step_dummy`: turn every single item within each columns into a dummy variable.
+4. `step_downsample`: Make sure we have equal number of observations for credit defaults
+
+```{r}
+bank_rec <- recipe(default ~ ., data = bank_train) %>% 
+  update_role(id, new_role = "id") %>% 
+  step_other(job, threshold = 0.03) %>%
+  step_dummy(all_nominal(), -all_outcomes()) %>% 
+  step_downsample(default)
+
+bank_prep <- prep(bank_rec)
+
+juiced <- juice(bank_prep)
+```
+
+This is what a recipe looks like. It's just a preprocessing 
+
+```{r}
+bank_rec
+```
+
+A recipe needs to be `prep`'d, which gives us a summary 
+
+```{r}
+bank_prep
+```
+
+Then we can `juice` a recipe, which gives us the product of our instructions
+
+```{r}
+juiced
+```
+
+## 2. Algorithm Specs
+
+Now we have to specify the settings of our random foreset. `tune_spec` is literally just a setting of a random forest we're going to be applying. `tune()` means we're going to tune this hyperparameter, so don't specify just yet, like 100 for trees. (Would have done more than a 100, but it took forever so just doing 100) We're tuning two hyperparams here:
+
+- mtry: Number of features to be used to split a node
+- min_n: Minimum number of items in a node that qualifies a split
+
+And then, 2 final lines are saying we're solving a classification problem with random forest, using a "ranger" package.
+```{r}
+tune_spec <- rand_forest(
+  mtry = tune(),
+  trees = 100,
+  min_n = tune()
+) %>%
+  set_mode("classification") %>%
+  set_engine("ranger")
+```
+
+## 3. Workflow
+
+Workflow puts everything together.
+
+```{r}
+tune_wf <- workflow() %>% 
+  add_recipe(bank_rec) %>% 
+  add_model(tune_spec)
+
+tune_wf
+```
+
+## 4. Cross Validation and Grid Search Tuning
+
+Now we make a 10-fold cross validation training sets
+
+```{r}
+set.seed(234)
+bank_folds <- vfold_cv(bank_train)
+
+bank_folds
+```
+
+### First Tuning
+
+Now that we've established all the previous steps, let's tune some hyperparameters
+
+We turn on parallel processing to make it a bit faster, and use the `tune_grid`, which takes our workflow, cv set, and 20 random combinations of hyperparameters.
+
+```{r message = FALSE, warning = FALSE}
+doParallel::registerDoParallel()
+
+set.seed(345)
+tune_res <- tune_grid(
+  tune_wf,
+  resamples = bank_folds,
+  grid = 20
+)
+```
+
+The result is a dataframe containing each data split we're using to train, and the metrics. 
+
+```{r}
+tune_res
+```
+
+And we can pull the metrics like so:
+
+```{r}
+tune_res %>% 
+  collect_metrics()
+```
+
+Let's pick the best hyperparameters according to roc_auc. 
+
+```{r}
+tune_res %>% 
+  collect_metrics() %>% 
+  filter(.metric == "roc_auc") %>% 
+  pivot_longer(mtry:min_n) %>% 
+  ggplot(aes(value, mean, color = name)) +
+  geom_point() + 
+  geom_line() +
+  facet_wrap(~name)
+```
+
+It seems like min_n is the most accurate around 5 & 10, while mtry was around 25, 35. Now that we know a little better, let's try a bunch of combinations in those ranges to train our model!
+
+### Second Tuning
+
+We need a new "grid". We're going to give it the ranges we want to test, and `levels`, which controls the number of possible combinations (trying too many would take too long!)
+
+```{r}
+rf_grid <- grid_regular(
+  mtry(range = c(5, 15)),
+  min_n(range = c(25, 35)),
+  levels = 10
+)
+
+rf_grid
+```
+
+Same exact tuning as the first one, but with a different grid.
+
+```{r message = FALSE, warning = FALSE}
+set.seed(456)
+regular_res <- tune_grid(
+  tune_wf,
+  resamples = bank_folds,
+  grid = rf_grid
+)
+
+regular_res
+```
+
+Let's take a look at our results. This graph tells you the accuracy of models with specified hyperparameters where each line represents a min_n, and the x-axis represents mtry.
+
+```{r}
+regular_res %>% 
+  collect_metrics() %>% 
+  filter(.metric == "roc_auc") %>% 
+  mutate(min_n = factor(min_n)) %>% 
+  select(mtry, min_n, mean) %>% 
+  ggplot(aes(mtry, mean, color = min_n)) +
+  geom_point() +
+  geom_line(alpha = 0.5, size = 1.5)
+```
+
+Seems like min_n of 35, at 8 mtry did the best. However, let's not guess, there is a function for that!
+
+```{r}
+best_auc <- select_best(regular_res, "roc_auc")
+
+best_auc
+```
+
+`r as.character(best_auc$mtry)` & `r as.character(best_auc$min_n)` it is! Let's finalize that.
+
+```{r}
+final_rf <- finalize_model(
+  tune_spec,
+  best_auc
+)
+
+final_rf
+```
+
+# Test model on test set
+
+`vip` package lets us see how each variable affected the model. The way it does it is by looking at each decision nodes' improvement compared to other nodes.
+
+```{r mesesage = FALSE, warning = FALSE}
+library(vip)
+
+final_rf %>%
+  set_engine("ranger", importance = "permutation") %>%
+  fit(default ~ .,
+    data = juice(bank_prep) %>% select(-id)
+  ) %>%
+  vip(geom = "point")
+```
+
+Obviously, your bank balance and whether you have loans or not will be a good predictor of credit default. All others seem meh though. That's probably a problem. Maybe this model will be useless when an unseen relationship between bank balance and credit default shows up. But regardless, we'll go forward.
+
+We're doing the exact same thing as above recipe, but with our final model.
+
+```{r}
+final_wf <- workflow() %>%
+  add_recipe(bank_rec) %>%
+  add_model(final_rf)
+
+final_res <- final_wf %>%
+  last_fit(bank_split)
+
+final_res
+```
+
+76% accuracy. I think that's pretty good. 
+
+```{r}
+final_res %>% 
+  collect_metrics()
+```
+
+One last thing to look at is the confusion matrix.
+
+```{r}
+final_res %>%  
+  collect_predictions() %>% 
+  conf_mat(.pred_class, default)
+```
+
+Seems like it did a good job predicting when someone has not defaulted on their loan, but it also said a lot of no's when in fact the person has defaulted on their loan. (lots of false positives)
+
+

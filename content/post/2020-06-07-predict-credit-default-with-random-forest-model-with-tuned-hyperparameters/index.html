@@ -1,0 +1,437 @@
+---
+title: Predict Credit Default with Random Forest Model with Tuned Hyperparameters
+author: Jiwan Heo
+date: '2020-06-07'
+tags:
+  - stats
+---
+
+
+
+<blockquote>
+<p>I just want to focus on writing about implementing the workflow of this algorithm in R, so will keep the explanation very brief. However, these are some excellent articles that I referenced on <a href="https://towardsdatascience.com/understanding-hyperparameters-and-its-optimisation-techniques-f0debba07568">hyperparameters</a>, <a href="https://towardsdatascience.com/understanding-random-forest-58381e0602d2">random forest</a> and <a href="https://towardsdatascience.com/hyperparameter-tuning-the-random-forest-in-python-using-scikit-learn-28d2aa77dd74">combining them</a>.</p>
+</blockquote>
+<p>Found this UCI Machine Learning Repo dataset containing <a href="https://www.kaggle.com/yufengsui/portuguese-bank-marketing-data-set">Portuguese bank data</a> from 2009. Its original focus was to determine how successful their marketing campaigns were (to get people to deposit money). But, it has a lot of variables that I wanted to use to tell another story with this dataset!</p>
+<div id="background-terminology" class="section level1">
+<h1>Background terminology</h1>
+<div id="random-foreset" class="section level2">
+<h2>Random foreset</h2>
+<p>Random Forest is a classification/regression algorithm that makes use of <em>many decision trees that act as a committee</em> making decisions by majority vote. The most important detail is the <strong>uncorrelated-ness between trees</strong>. By creating many, many decision trees that don’t look like each other, the random forrest “hedges” risks of getting the wrong prediction. If one tree messes up, but many other trees with completely different features get it right, the initial tree is less guilty :) Much like a diversified investment portfolio. On top of this, to ensure even more randomness, decision crieria at each nodes of trees are decided by randomly chosen variables.</p>
+</div>
+<div id="tuning-hyperparameters" class="section level2">
+<h2>Tuning hyperparameters</h2>
+<p>Hyperparameters refer to the settings of a training process. These must be set by a human before training. In case of what we’re looking at today in a random forest,</p>
+<ul>
+<li>Number of trees</li>
+<li>Number of features allowed in nodes</li>
+<li>Minimum number of data points in a node that qualifies a split.</li>
+</ul>
+<p>On the other hand, a parameter is something that a training process teaches itself, such as slope/intercept in linear models and coefficients in logistic models.</p>
+</div>
+<div id="grid-search-cross-validation" class="section level2">
+<h2>Grid search &amp; cross validation</h2>
+<p>Kinda sounds very brute force-y, but tuning hyperparameters requires trying as many combinations possible and picking the best specs. To do this we’re going to use a technique called “Grid Search” to achieve this.</p>
+<p>Finally, we’ll use resampling/subsampling methods like bootstrap or cross-validation to add randomness to the training dataset. I don’t quite fully understand the benefits/downsides of choosing one over the other, but I’m going to use cross-validation for this post.</p>
+</div>
+</div>
+<div id="lets-build-the-model" class="section level1">
+<h1>Let’s build the model!</h1>
+<p>Quickly cleaned column names and gave row id’s.</p>
+<pre class="r"><code>library(tidyverse)
+library(tidymodels)
+theme_set(theme_light())
+
+bank &lt;- read_csv(&quot;bank_cleaned.csv&quot;) %&gt;% 
+  janitor::clean_names() %&gt;% 
+  rename(id = x1)
+
+bank_rough &lt;- bank %&gt;%
+  select(-response_binary) %&gt;% 
+  mutate_if(is.character, factor)
+
+bank_rough</code></pre>
+<pre><code>## # A tibble: 40,841 x 17
+##       id   age job   marital education default balance housing loan    day month
+##    &lt;dbl&gt; &lt;dbl&gt; &lt;fct&gt; &lt;fct&gt;   &lt;fct&gt;     &lt;fct&gt;     &lt;dbl&gt; &lt;fct&gt;   &lt;fct&gt; &lt;dbl&gt; &lt;fct&gt;
+##  1     0    58 mana~ married tertiary  no         2143 yes     no        5 may  
+##  2     1    44 tech~ single  secondary no           29 yes     no        5 may  
+##  3     2    33 entr~ married secondary no            2 yes     yes       5 may  
+##  4     5    35 mana~ married tertiary  no          231 yes     no        5 may  
+##  5     6    28 mana~ single  tertiary  no          447 yes     yes       5 may  
+##  6     7    42 entr~ divorc~ tertiary  yes           2 yes     no        5 may  
+##  7     8    58 reti~ married primary   no          121 yes     no        5 may  
+##  8     9    43 tech~ single  secondary no          593 yes     no        5 may  
+##  9    10    41 admi~ divorc~ secondary no          270 yes     no        5 may  
+## 10    11    29 admi~ single  secondary no          390 yes     no        5 may  
+## # ... with 40,831 more rows, and 6 more variables: duration &lt;dbl&gt;,
+## #   campaign &lt;dbl&gt;, pdays &lt;dbl&gt;, previous &lt;dbl&gt;, poutcome &lt;fct&gt;, response &lt;fct&gt;</code></pre>
+<div id="quick-eda" class="section level2">
+<h2>Quick EDA</h2>
+<p>This is something I like to do with numeric data. So I took all columns that are of class <code>dbl</code>, pivoted the dataframe, and then made a histogram for each variable.</p>
+<pre class="r"><code>bank_rough %&gt;% 
+  select_if(is.double) %&gt;% 
+  select(-id) %&gt;% 
+  pivot_longer(age:previous) %&gt;% 
+  ggplot(aes(value)) +
+  geom_histogram() +
+  facet_wrap(~name, scales = &quot;free&quot;)</code></pre>
+<p><img src="/blog/2020-06-07-predict-credit-default-with-random-forest-model-with-tuned-hyperparameters/index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>Interesting to see there’s negative balances, that’s probably gonna be a major predictor.</p>
+<p>For the columns that weren’t selected, I’m going to do the exact same thing as above, but with column charts. This is a trick I learned recently. The powerful <code>reorder_within</code> &amp; <code>scale_y_reordered</code> functions from the <code>tidytext</code> package makes it really easy to get a grasp our data.</p>
+<pre class="r"><code>library(tidytext)
+
+bank_rough %&gt;% 
+  select_if(is.factor) %&gt;% 
+  mutate_all(as.character) %&gt;% 
+  pivot_longer(job:response) %&gt;% 
+  count(name, value) %&gt;% 
+  mutate(value = reorder_within(value, n, name)) %&gt;% 
+  ggplot(aes(n, value, fill = value)) +
+  geom_col() +
+  theme(legend.position = &quot;none&quot;) +
+  facet_wrap(~name, scales = &quot;free&quot;) +
+  scale_y_reordered()</code></pre>
+<p><img src="/blog/2020-06-07-predict-credit-default-with-random-forest-model-with-tuned-hyperparameters/index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>Now that we’ve seen all variables in this dataset, I’m going to take these variables that I think are important.</p>
+<pre class="r"><code>bank_proc &lt;- bank_rough %&gt;% 
+  select(id, education, default, housing, job, loan, marital, age, balance)</code></pre>
+</div>
+</div>
+<div id="model-building" class="section level1">
+<h1>Model Building</h1>
+<p>Let’s set split our data into training/testing sets. “strata” argument just locks in the proportions of class, so that both training and testing sets have the same % mix of default and non-defaults.</p>
+<pre class="r"><code>library(tidymodels)
+set.seed(123)
+
+bank_split &lt;- initial_split(bank_proc, strata = housing)
+bank_train &lt;- training(bank_split)
+bank_test &lt;- testing(bank_split)</code></pre>
+<p>I am going to tune our model twice. This tuning comes in after setting the recipe, algorithm specs, workflow, and then a cv-set. In the first tuning, I’m going to randomly select 20 combinations of hyperparameters (<code>mtry</code> and <code>min_n</code>), and then I’ll look at the result, and then narrow down the range of the combinations and tune once again. We’re going to do this the tidy way, with <code>tidymodels</code>. I’m excited to see what we can do with this!</p>
+<div id="recipe" class="section level2">
+<h2>1. Recipe</h2>
+<p>In <code>tidymodels</code>, a <code>recipe</code> works much like a cooking recipe. You first say what you’re going to cook (credit default explained by all variables from bank_train), and then add a bunch of “steps” you need to finish cooking. A recipe is not trained with any data yet, it’s just some specifications to the data before it’s fed into the model! Some steps we took are:</p>
+<ol style="list-style-type: decimal">
+<li><code>update_role</code>: We just said the <code>id</code> column is literally an id, so don’t use as a predictor.</li>
+<li><code>step_other</code>: take a column, and an item within that column doesn’t come up frequently enough. I thought there were too many jobs, so we’ll lump the least frequent ones as “other”.</li>
+<li><code>step_dummy</code>: turn every single item within each columns into a dummy variable.</li>
+<li><code>step_downsample</code>: Make sure we have equal number of observations for credit defaults</li>
+</ol>
+<pre class="r"><code>bank_rec &lt;- recipe(default ~ ., data = bank_train) %&gt;% 
+  update_role(id, new_role = &quot;id&quot;) %&gt;% 
+  step_other(job, threshold = 0.03) %&gt;%
+  step_dummy(all_nominal(), -all_outcomes()) %&gt;% 
+  step_downsample(default)
+
+bank_prep &lt;- prep(bank_rec)
+
+juiced &lt;- juice(bank_prep)</code></pre>
+<p>This is what a recipe looks like. It’s just a preprocessing</p>
+<pre class="r"><code>bank_rec</code></pre>
+<pre><code>## Data Recipe
+## 
+## Inputs:
+## 
+##       role #variables
+##         id          1
+##    outcome          1
+##  predictor          7
+## 
+## Operations:
+## 
+## Collapsing factor levels for job
+## Dummy variables from all_nominal, -, all_outcomes()
+## Down-sampling based on default</code></pre>
+<p>A recipe needs to be <code>prep</code>’d, which gives us a summary</p>
+<pre class="r"><code>bank_prep</code></pre>
+<pre><code>## Data Recipe
+## 
+## Inputs:
+## 
+##       role #variables
+##         id          1
+##    outcome          1
+##  predictor          7
+## 
+## Training data contained 30631 data points and no missing data.
+## 
+## Operations:
+## 
+## Collapsing factor levels for job [trained]
+## Dummy variables from education, housing, job, loan, marital [trained]
+## Down-sampling based on default [trained]</code></pre>
+<p>Then we can <code>juice</code> a recipe, which gives us the product of our instructions</p>
+<pre class="r"><code>juiced</code></pre>
+<pre><code>## # A tibble: 1,168 x 18
+##       id   age balance default education_secon~ education_terti~ housing_yes
+##    &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt; &lt;fct&gt;              &lt;dbl&gt;            &lt;dbl&gt;       &lt;dbl&gt;
+##  1  3242    48    1913 no                     1                0           1
+##  2  9043    48    3458 no                     1                0           0
+##  3 26863    30    1472 no                     1                0           1
+##  4   905    35     267 no                     0                1           1
+##  5 43558    68    7945 no                     0                0           0
+##  6 44162    31    2166 no                     0                1           0
+##  7 27274    31      11 no                     1                0           1
+##  8 20682    58    2609 no                     1                0           0
+##  9  8464    35     412 no                     1                0           1
+## 10 15581    29     -14 no                     0                1           0
+## # ... with 1,158 more rows, and 11 more variables: job_blue.collar &lt;dbl&gt;,
+## #   job_entrepreneur &lt;dbl&gt;, job_management &lt;dbl&gt;, job_retired &lt;dbl&gt;,
+## #   job_self.employed &lt;dbl&gt;, job_services &lt;dbl&gt;, job_technician &lt;dbl&gt;,
+## #   job_other &lt;dbl&gt;, loan_yes &lt;dbl&gt;, marital_married &lt;dbl&gt;,
+## #   marital_single &lt;dbl&gt;</code></pre>
+</div>
+<div id="algorithm-specs" class="section level2">
+<h2>2. Algorithm Specs</h2>
+<p>Now we have to specify the settings of our random foreset. <code>tune_spec</code> is literally just a setting of a random forest we’re going to be applying. <code>tune()</code> means we’re going to tune this hyperparameter, so don’t specify just yet, like 100 for trees. (Would have done more than a 100, but it took forever so just doing 100) We’re tuning two hyperparams here:</p>
+<ul>
+<li>mtry: Number of features to be used to split a node</li>
+<li>min_n: Minimum number of items in a node that qualifies a split</li>
+</ul>
+<p>And then, 2 final lines are saying we’re solving a classification problem with random forest, using a “ranger” package.</p>
+<pre class="r"><code>tune_spec &lt;- rand_forest(
+  mtry = tune(),
+  trees = 100,
+  min_n = tune()
+) %&gt;%
+  set_mode(&quot;classification&quot;) %&gt;%
+  set_engine(&quot;ranger&quot;)</code></pre>
+</div>
+<div id="workflow" class="section level2">
+<h2>3. Workflow</h2>
+<p>Workflow puts everything together.</p>
+<pre class="r"><code>tune_wf &lt;- workflow() %&gt;% 
+  add_recipe(bank_rec) %&gt;% 
+  add_model(tune_spec)
+
+tune_wf</code></pre>
+<pre><code>## == Workflow =====================================================================================================
+## Preprocessor: Recipe
+## Model: rand_forest()
+## 
+## -- Preprocessor -------------------------------------------------------------------------------------------------
+## 3 Recipe Steps
+## 
+## * step_other()
+## * step_dummy()
+## * step_downsample()
+## 
+## -- Model --------------------------------------------------------------------------------------------------------
+## Random Forest Model Specification (classification)
+## 
+## Main Arguments:
+##   mtry = tune()
+##   trees = 100
+##   min_n = tune()
+## 
+## Computational engine: ranger</code></pre>
+</div>
+<div id="cross-validation-and-grid-search-tuning" class="section level2">
+<h2>4. Cross Validation and Grid Search Tuning</h2>
+<p>Now we make a 10-fold cross validation training sets</p>
+<pre class="r"><code>set.seed(234)
+bank_folds &lt;- vfold_cv(bank_train)
+
+bank_folds</code></pre>
+<pre><code>## #  10-fold cross-validation 
+## # A tibble: 10 x 2
+##    splits               id    
+##    &lt;named list&gt;         &lt;chr&gt; 
+##  1 &lt;split [27.6K/3.1K]&gt; Fold01
+##  2 &lt;split [27.6K/3.1K]&gt; Fold02
+##  3 &lt;split [27.6K/3.1K]&gt; Fold03
+##  4 &lt;split [27.6K/3.1K]&gt; Fold04
+##  5 &lt;split [27.6K/3.1K]&gt; Fold05
+##  6 &lt;split [27.6K/3.1K]&gt; Fold06
+##  7 &lt;split [27.6K/3.1K]&gt; Fold07
+##  8 &lt;split [27.6K/3.1K]&gt; Fold08
+##  9 &lt;split [27.6K/3.1K]&gt; Fold09
+## 10 &lt;split [27.6K/3.1K]&gt; Fold10</code></pre>
+<div id="first-tuning" class="section level3">
+<h3>First Tuning</h3>
+<p>Now that we’ve established all the previous steps, let’s tune some hyperparameters</p>
+<p>We turn on parallel processing to make it a bit faster, and use the <code>tune_grid</code>, which takes our workflow, cv set, and 20 random combinations of hyperparameters.</p>
+<pre class="r"><code>doParallel::registerDoParallel()
+
+set.seed(345)
+tune_res &lt;- tune_grid(
+  tune_wf,
+  resamples = bank_folds,
+  grid = 20
+)</code></pre>
+<p>The result is a dataframe containing each data split we’re using to train, and the metrics.</p>
+<pre class="r"><code>tune_res</code></pre>
+<pre><code>## #  10-fold cross-validation 
+## # A tibble: 10 x 4
+##    splits               id     .metrics          .notes          
+##    &lt;named list&gt;         &lt;chr&gt;  &lt;list&gt;            &lt;list&gt;          
+##  1 &lt;split [27.6K/3.1K]&gt; Fold01 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
+##  2 &lt;split [27.6K/3.1K]&gt; Fold02 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
+##  3 &lt;split [27.6K/3.1K]&gt; Fold03 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
+##  4 &lt;split [27.6K/3.1K]&gt; Fold04 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
+##  5 &lt;split [27.6K/3.1K]&gt; Fold05 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
+##  6 &lt;split [27.6K/3.1K]&gt; Fold06 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
+##  7 &lt;split [27.6K/3.1K]&gt; Fold07 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
+##  8 &lt;split [27.6K/3.1K]&gt; Fold08 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
+##  9 &lt;split [27.6K/3.1K]&gt; Fold09 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
+## 10 &lt;split [27.6K/3.1K]&gt; Fold10 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;</code></pre>
+<p>And we can pull the metrics like so:</p>
+<pre class="r"><code>tune_res %&gt;% 
+  collect_metrics()</code></pre>
+<pre><code>## # A tibble: 40 x 7
+##     mtry min_n .metric  .estimator  mean     n std_err
+##    &lt;int&gt; &lt;int&gt; &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt;
+##  1     1     6 accuracy binary     0.752    10 0.00403
+##  2     1     6 roc_auc  binary     0.851    10 0.00726
+##  3     2    39 accuracy binary     0.757    10 0.00300
+##  4     2    39 roc_auc  binary     0.859    10 0.00679
+##  5     3    35 accuracy binary     0.762    10 0.00348
+##  6     3    35 roc_auc  binary     0.862    10 0.00622
+##  7     4    15 accuracy binary     0.766    10 0.00350
+##  8     4    15 roc_auc  binary     0.861    10 0.00611
+##  9     4    17 accuracy binary     0.768    10 0.00340
+## 10     4    17 roc_auc  binary     0.862    10 0.00567
+## # ... with 30 more rows</code></pre>
+<p>Let’s pick the best hyperparameters according to roc_auc.</p>
+<pre class="r"><code>tune_res %&gt;% 
+  collect_metrics() %&gt;% 
+  filter(.metric == &quot;roc_auc&quot;) %&gt;% 
+  pivot_longer(mtry:min_n) %&gt;% 
+  ggplot(aes(value, mean, color = name)) +
+  geom_point() + 
+  geom_line() +
+  facet_wrap(~name)</code></pre>
+<p><img src="/blog/2020-06-07-predict-credit-default-with-random-forest-model-with-tuned-hyperparameters/index_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<p>It seems like min_n is the most accurate around 5 &amp; 10, while mtry was around 25, 35. Now that we know a little better, let’s try a bunch of combinations in those ranges to train our model!</p>
+</div>
+<div id="second-tuning" class="section level3">
+<h3>Second Tuning</h3>
+<p>We need a new “grid”. We’re going to give it the ranges we want to test, and <code>levels</code>, which controls the number of possible combinations (trying too many would take too long!)</p>
+<pre class="r"><code>rf_grid &lt;- grid_regular(
+  mtry(range = c(5, 15)),
+  min_n(range = c(25, 35)),
+  levels = 10
+)
+
+rf_grid</code></pre>
+<pre><code>## # A tibble: 100 x 2
+##     mtry min_n
+##    &lt;int&gt; &lt;int&gt;
+##  1     5    25
+##  2     6    25
+##  3     7    25
+##  4     8    25
+##  5     9    25
+##  6    10    25
+##  7    11    25
+##  8    12    25
+##  9    13    25
+## 10    15    25
+## # ... with 90 more rows</code></pre>
+<p>Same exact tuning as the first one, but with a different grid.</p>
+<pre class="r"><code>set.seed(456)
+regular_res &lt;- tune_grid(
+  tune_wf,
+  resamples = bank_folds,
+  grid = rf_grid
+)
+
+regular_res</code></pre>
+<pre><code>## #  10-fold cross-validation 
+## # A tibble: 10 x 4
+##    splits               id     .metrics           .notes          
+##    &lt;named list&gt;         &lt;chr&gt;  &lt;list&gt;             &lt;list&gt;          
+##  1 &lt;split [27.6K/3.1K]&gt; Fold01 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
+##  2 &lt;split [27.6K/3.1K]&gt; Fold02 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
+##  3 &lt;split [27.6K/3.1K]&gt; Fold03 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
+##  4 &lt;split [27.6K/3.1K]&gt; Fold04 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
+##  5 &lt;split [27.6K/3.1K]&gt; Fold05 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
+##  6 &lt;split [27.6K/3.1K]&gt; Fold06 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
+##  7 &lt;split [27.6K/3.1K]&gt; Fold07 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
+##  8 &lt;split [27.6K/3.1K]&gt; Fold08 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
+##  9 &lt;split [27.6K/3.1K]&gt; Fold09 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
+## 10 &lt;split [27.6K/3.1K]&gt; Fold10 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;</code></pre>
+<p>Let’s take a look at our results. This graph tells you the accuracy of models with specified hyperparameters where each line represents a min_n, and the x-axis represents mtry.</p>
+<pre class="r"><code>regular_res %&gt;% 
+  collect_metrics() %&gt;% 
+  filter(.metric == &quot;roc_auc&quot;) %&gt;% 
+  mutate(min_n = factor(min_n)) %&gt;% 
+  select(mtry, min_n, mean) %&gt;% 
+  ggplot(aes(mtry, mean, color = min_n)) +
+  geom_point() +
+  geom_line(alpha = 0.5, size = 1.5)</code></pre>
+<p><img src="/blog/2020-06-07-predict-credit-default-with-random-forest-model-with-tuned-hyperparameters/index_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+<p>Seems like min_n of 35, at 8 mtry did the best. However, let’s not guess, there is a function for that!</p>
+<pre class="r"><code>best_auc &lt;- select_best(regular_res, &quot;roc_auc&quot;)
+
+best_auc</code></pre>
+<pre><code>## # A tibble: 1 x 2
+##    mtry min_n
+##   &lt;int&gt; &lt;int&gt;
+## 1     7    30</code></pre>
+<p>7 &amp; 30 it is! Let’s finalize that.</p>
+<pre class="r"><code>final_rf &lt;- finalize_model(
+  tune_spec,
+  best_auc
+)
+
+final_rf</code></pre>
+<pre><code>## Random Forest Model Specification (classification)
+## 
+## Main Arguments:
+##   mtry = 7
+##   trees = 100
+##   min_n = 30
+## 
+## Computational engine: ranger</code></pre>
+</div>
+</div>
+</div>
+<div id="test-model-on-test-set" class="section level1">
+<h1>Test model on test set</h1>
+<p><code>vip</code> package lets us see how each variable affected the model. The way it does it is by looking at each decision nodes’ improvement compared to other nodes.</p>
+<pre class="r"><code>library(vip)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;vip&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:utils&#39;:
+## 
+##     vi</code></pre>
+<pre class="r"><code>final_rf %&gt;%
+  set_engine(&quot;ranger&quot;, importance = &quot;permutation&quot;) %&gt;%
+  fit(default ~ .,
+    data = juice(bank_prep) %&gt;% select(-id)
+  ) %&gt;%
+  vip(geom = &quot;point&quot;)</code></pre>
+<p><img src="/blog/2020-06-07-predict-credit-default-with-random-forest-model-with-tuned-hyperparameters/index_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<p>Obviously, your bank balance and whether you have loans or not will be a good predictor of credit default. All others seem meh though. That’s probably a problem. Maybe this model will be useless when an unseen relationship between bank balance and credit default shows up. But regardless, we’ll go forward.</p>
+<p>We’re doing the exact same thing as above recipe, but with our final model.</p>
+<pre class="r"><code>final_wf &lt;- workflow() %&gt;%
+  add_recipe(bank_rec) %&gt;%
+  add_model(final_rf)
+
+final_res &lt;- final_wf %&gt;%
+  last_fit(bank_split)
+
+final_res</code></pre>
+<pre><code>## # Monte Carlo cross-validation (0.75/0.25) with 1 resamples  
+## # A tibble: 1 x 6
+##   splits         id          .metrics     .notes      .predictions     .workflow
+##   &lt;list&gt;         &lt;chr&gt;       &lt;list&gt;       &lt;list&gt;      &lt;list&gt;           &lt;list&gt;   
+## 1 &lt;split [30.6K~ train/test~ &lt;tibble [2 ~ &lt;tibble [0~ &lt;tibble [10,210~ &lt;workflo~</code></pre>
+<p>76% accuracy. I think that’s pretty good.</p>
+<pre class="r"><code>final_res %&gt;% 
+  collect_metrics()</code></pre>
+<pre><code>## # A tibble: 2 x 3
+##   .metric  .estimator .estimate
+##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
+## 1 accuracy binary         0.763
+## 2 roc_auc  binary         0.865</code></pre>
+<p>One last thing to look at is the confusion matrix.</p>
+<pre class="r"><code>final_res %&gt;%  
+  collect_predictions() %&gt;% 
+  conf_mat(.pred_class, default)</code></pre>
+<pre><code>##           Truth
+## Prediction   no  yes
+##        no  7638 2393
+##        yes   30  149</code></pre>
+<p>Seems like it did a good job predicting when someone has not defaulted on their loan, but it also said a lot of no’s when in fact the person has defaulted on their loan. (lots of false positives)</p>
+</div>

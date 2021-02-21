@@ -1,0 +1,59 @@
+---
+title: Learning to Make Pretty Things!
+author: Jiwan Heo
+date: '2020-07-18'
+tags:
+  - webdev
+---
+
+Hey everyone! Hope all is well with you :)
+
+I can't believe we're already in the second half of 2020! Maybe it's because I'm at the age where I _should_ be transitioning into an actual adult, but it's been a weird year y'know? Never would I have thought that I'd be building my professional career in my highschool bedroom lol!
+
+There's just so many things that we can't do (or at a limited experience), that we previously enjoyed. Going into stores at the Rideau Centre just cuz it's on my way home from work, or meeting up with friends for lunch after texting "lunch?" at noon, are just a few things that I really miss. 
+
+What are you guys doing nowadays instead? (Maybe I should have a comment section for this lol) For me, my screen-time went up significantly, whether it's watching Netflix, playing 2K, or learning data stuff. 
+
+One interesting thing I've been doing in lately, is aesthetics/design of digital content, to put it broadly. [Dribbble](https://dribbble.com/) has become one of my favourite websites to visit. I kinda use this like instagram, where I mindlessly scroll to check out cool designs. I also made another reddit account, following strictly visualization subs like [r/dataisbeautiful](https://www.reddit.com/r/dataisbeautiful/) or [r/web_design](https://www.reddit.com/r/web_design/).
+
+## Pretty Things!
+
+_"Pretty"_ is such a simple and powerful word to describe something. If you have a report that does a job perfectly fine, but doesn't have that visual attractiveness, someone might say "this is a good report, but can you make this a little prettier?", and you'll understand right away what that means. Maybe it's not the most hard-hitting professional word, but it's tough to find a better one.
+
+Until not too long ago, I was mostly focused on "getting the job done", and simplifying things as much as possible to avoid distraction. While this doesn't mean I intentionally created bad-looking graphs, but rather, I chose to make plain-vanilla ones, to avoid mis-presentation. 
+
+For example, this COVID dashboard made with R-Shiny is something very close to what I would have made. This gets the job done, maybe in the most straightforward way possible. But It's so ugly, that nobody would be excited to look at it. This basically defeats the whole purpose of a dashboard, which is to summarize and display information _better than the raw data_. 
+
+```{r echo = FALSE, fig.cap="Lots of good info, but tough to navigate"}
+knitr::include_graphics("bad.png")
+```
+
+Here's something a little better. You can still have the main stats (total, recovered, active and death cases). You have the by-country breakdown, even though it doesn't further break down into types of cases.
+
+```{r echo = FALSE, fig.cap="Less stuff, but effective"}
+knitr::include_graphics("good.png")
+```
+
+In my opinion, the main difference between the 2 dashboards is spacing. In the second one, the contents are less crowded, even with the bottom two tiles with no underlying data. This gives your eyes a much easier canvas to look at, and your brain doesn't have to work as hard. But the trade-off is that since there's less space to work with, some tough decisions have to be made to choose what information you want to display and how. Most notably, it lacks the timeline graph, which a lot of people love, including me!
+
+## What I'm Working on
+
+Since quarantine, Learning French has been my main focus, which I've certainly gotten better at. While I definitely need to work on it more, but I want to shift my focus to something that is, at the moment, a little more interesting to me.
+
+More specifically, HTML/CSS is what I'm talking about. My goal is to be proficient enough with them (eventually Javascript too), to use them almost like the Photoshop, to create story-telling visualizations. I'm not really trying to be a web dev, I just want to use it to tell a good story. This [FiveThirtyEight article](https://projects.fivethirtyeight.com/2020-primary-forecast/california/) paints a good picture of what I'm aiming to do.
+
+To do this, I'm learn how to build a bunch of small pieces of a website, which will hopefully guide me into building a whole website. I've been uploading them on [Github](https://github.com/jiwanheo/web-dev-practice) too! Eventually, I'm hoping to take on an interesting project that's actually cool. I really want to put something together, using everything in my toolbox. So I'd probably want to use R to do the data gathering/processing part, and the web dev to make something visually appealing.
+
+Here's a couple things I learned how to make, thanks to some excellent tutorials from this [Youtube Channel](https://www.youtube.com/channel/UCETveVX7TPauIupxYz6sFtA).
+
+```{r echo = FALSE, fig.cap="A form with small animations"}
+knitr::include_graphics("form.gif")
+```
+
+```{r echo = FALSE, fig.cap="A screen size-responsive gallery"}
+knitr::include_graphics("gallery.gif")
+```
+
+One last thing! [This site](https://htmlpreview.github.io/) lets you preview any HTML pages with scripts applied on them, as long as they're on Github. What's good about it for me, is that I can share my work with people, without having to worry about publishing!
+
+Bye for now!

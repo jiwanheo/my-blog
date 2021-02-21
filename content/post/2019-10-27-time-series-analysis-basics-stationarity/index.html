@@ -1,0 +1,70 @@
+---
+title: Time Series Analysis Basics - Stationarity
+author: Jiwan Heo
+date: '2019-10-27'
+tags:
+  - Time series
+---
+
+</style>
+<p>I was in a meeting this week with a software company, and came across a machine learning technique that I wasn’t too familiar with, <em>ARIMA</em>. Instinctively, I wanted to look it up and make a short post about it with an easy example. But it turns out that there was a lot of stuff that I needed to know before even approaching this concept. I despise long posts explaining things, so, I think it’s best to split up this whole ARIMA thing into small chunks.</p>
+<div class="figure"><span id="fig:unnamed-chunk-1"></span>
+<img src="jackie.jpg" alt="What is ARIMA????" width="237" />
+<p class="caption">
+Figure 1: What is ARIMA????
+</p>
+</div>
+<p>ARIMA stands for “AutoRegressive Integrated Moving Average”. What does that even mean in English? It’s basically a technique used to determine future value of something in a time-series. Think of stock prices or number of passengers in an airline company.</p>
+<p>But hey! Let’s not get too ahead of ourselves. We first need to know a thing or two about time serieses. (Matty’s probably triggered by that word if he’s reading this) A time series needs to be <em>stationary</em> for us to even do any sort of analysis. I’m gonna just focus on explaining this today.</p>
+<div id="stationarity" class="section level2">
+<h2>Stationarity</h2>
+<p>Stationarity is just a fancy word for saying that data must have:</p>
+<p><strong>1. Constant mean over time</strong> (or average, if you prefer)</p>
+<pre class="r"><code>par(mfrow=c(1,2))
+
+x &lt;- seq(0,8*pi,length.out=100)
+y &lt;- sin(x)
+constant &lt;- plot(x, y, type=&quot;l&quot;,
+                 main = &quot;Graph 1&quot;, xlab = &quot;Time&quot;, ylab = &quot;&quot;)
+not_constant &lt;- plot(x, y+x, type = &quot;l&quot;,
+                     main = &quot;Graph 2&quot;, xlab = &quot;Time&quot;, ylab = &quot;&quot;)</code></pre>
+<p><img src="/post/2019-10-27-time-series-analysis-basics-stationarity/index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>See how the first graph (sine wave) is centered around the mean of 0, and the second one doesn’t really have a common mean. No matter which intervals you pick from the first graph, the mean will be 0, but you can’t say the same with the second graph, as it depends on which interval you pick along the x-axis.</p>
+<p><strong>2. Constant variance over time</strong> (how much the data fluctuates)</p>
+<p>This one’s pretty easy. Variance essentially means what is the difference between the peak and the trough of a period, or high and low. You want this to be consistent, whichever time period you pick.</p>
+<pre class="r"><code>par(mfrow=c(1,2))
+
+x &lt;- seq(0,8*pi,length.out=100)
+y &lt;- sin(x)
+t &lt;- seq(0:4)
+y_ &lt;- t/x * sin(x * t) 
+constant &lt;- plot(x, y, type=&quot;l&quot;,
+                 main = &quot;Graph 1&quot;, xlab = &quot;Time&quot;, ylab = &quot;&quot;)
+not_constant &lt;- plot(x, y_, type = &quot;l&quot;,
+                     main = &quot;Graph 2&quot;, xlab = &quot;Time&quot;, ylab = &quot;&quot;)</code></pre>
+<p><img src="/post/2019-10-27-time-series-analysis-basics-stationarity/index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>The first graph shows a constant variance whereever you look at, but you can’t say the same with the second graph. Period between 0 &amp; 3 is way larger than 10 &amp; 13.</p>
+<p><strong>3. Covariance of two values that is independent of time</strong></p>
+<p>Covariance is just how one variable moves with another variable. Using a stock example, it is how price at <em>t</em> moves in relation to price at <em>t-1</em>. If they are independent of time, the change should be the same where ever you look at.</p>
+<pre class="r"><code>par(mfrow=c(1,2))
+
+x &lt;- seq(0,8*pi,length.out=100)
+f &lt;- x/pi
+y &lt;- sin(x)
+y_ &lt;- sin(2*pi*f*x)
+
+constant &lt;- plot(x, y, type=&quot;l&quot;,
+                 main = &quot;Graph 1&quot;, xlab = &quot;Time&quot;, ylab = &quot;&quot;)
+
+not_constant &lt;- plot(x, y_, type = &quot;l&quot;,
+                     main = &quot;Graph 2&quot;, xlab = &quot;Time&quot;, ylab = &quot;&quot;)</code></pre>
+<p><img src="/post/2019-10-27-time-series-analysis-basics-stationarity/index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p>You’ll notice in the second graph (don’t ask me what it is, I just played around with the stuff I found on stackoverflow :sweat_smile:), that the density of the waves are irregular, depending on where you look in the x-axis. This is what happens when the covariance of two variables (or price of a stock at <em>t</em> and <em>t-1</em>) is dependent on time. The interval between 5 &amp; 10 is very different from that of 20 &amp; 25 in the second graph, whereas it doesn’t change at all in the first graph.</p>
+<div class="figure"><span id="fig:unnamed-chunk-5"></span>
+<img src="thats_all.jpg" alt="BYE" width="275" />
+<p class="caption">
+Figure 2: BYE
+</p>
+</div>
+<p>There you have it y’all, that wasn’t so bad eh? Now that we covered the necessary requirements of a time series analysis, we’ll look at some other interesting things.</p>
+</div>

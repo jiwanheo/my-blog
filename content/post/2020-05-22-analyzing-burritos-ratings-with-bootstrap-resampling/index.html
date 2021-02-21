@@ -1,0 +1,179 @@
+---
+title: 'Analyzing Burritos Ratings with Bootstrap Resampling '
+author: Jiwan Heo
+date: '2020-05-22'
+tags:
+  - stats
+---
+
+
+
+<p>You ever had to make a big decision out of a small dataset, and weren’t sure if you’re making the right call? Maybe you’re conducting a survey to see how COVID affected the spending habits of university students vs people in their 40s, and only 10 students responded. Or maybe you’re an analyst in a big company, who’s trying to make a pricing decision based on past performances, but you only have 3 weeks of data. What these two problems have in common is the lack of sample size and the uncertainty of the decisions that come from it. I, for one, asked myself many times, “K, I did all the analysis correctly, but does this really tell the whole story?”</p>
+<p>In this short blog post, I’m going to explain &amp; demonstrate a stat technique called <strong>bootstrap resampling</strong> that can help answer that question. Big thanks to brilliant Julia Silge’s <a href="https://www.youtube.com/watch?v=7LGR1sEUXoI">video</a> that gave me the inspiration.</p>
+<p>If you already know what bootstrap is, or don’t feel like reading my interpretation, feel free to skip the next paragraph lol</p>
+<p>In its essence, bootstrap works by taking many samples from a dataset <strong>with replacement</strong> and conducting whatever you want to find out over and over again. For example, let’s say I want to know what the favourite Netflix show is among 14 of my friends whose names are <code>2,3,4,...,9, 10,J,Q,K,A</code>. Now, I take a deck of cards (52 / 4 = 13, everyone has an equal chance of being selected), and randomly pick one up. Let’s say <code>5 of hearts</code> was drawn, and her favourite show is <code>the Office</code>. Ok, cool. Now, I <strong>put the 5 of heart back into the deck</strong>, shuffle, and draw another card. And this time, <code>3 of spades</code> was drawn, and his favourite show is <code>Modern Family</code>. We put the card back in and draw another one. This time, by chance, we picked up the <code>5 of hearts</code> again. So we have 2 <code>Office</code> and 1 <code>Modern family</code>. You get the idea. We repeat this until we’ve drawn 14, and it so happens that the Office was the majority out of 14. Now, we can say the <em>result</em> of this <em>round</em> of draws was the Office. If we run this a thousand times, and tally up the results. Maybe <code>the Office</code> won 800 rounds, 150 for <code>Modern Family</code> and the rest went to other shows. At this point, we can confidently say that out of these 14 people, their favourite show is <code>the Office</code>.</p>
+<p>Ok, now that we’ve covered the fundamentals, let’s see how this works in action.</p>
+<div id="burritos-ratings" class="section level1">
+<h1>Burritos Ratings</h1>
+<p>I got this random data from Jeremy Singer-Vine’s <a href="https://www.jsvine.com/">Data is Plural</a> newsletter. Apparently guy works for BuzzFeed, I had no idea until today.</p>
+<pre class="r"><code>library(tidyverse)
+library(tidymodels)
+burritos &lt;- read_csv(&quot;burritos.csv&quot;) %&gt;% 
+  filter(!is.na(overall)) %&gt;% 
+  group_by(location, type) %&gt;% 
+  summarize(score = mean(overall)) %&gt;% 
+  ungroup()
+
+burritos</code></pre>
+<pre><code>## # A tibble: 269 x 3
+##    location                                            type                score
+##    &lt;chr&gt;                                               &lt;chr&gt;               &lt;dbl&gt;
+##  1 Albertacos                                          California           3.7 
+##  2 Albertacos                                          Carne asada          3.2 
+##  3 Alberto&#39;s 623 N Escondido Blvd, Escondido, CA 92025 Carne Asada          4.8 
+##  4 Burrito Box                                         Steak with guacamo~  3.5 
+##  5 Burrito Factory                                     Steak everything     3.5 
+##  6 Burros and Fries                                    California           3.65
+##  7 Burros and Fries                                    Carne asada          4   
+##  8 Burros and Fries                                    Shrimp california    3   
+##  9 Caliente Mexican Food                               California           2   
+## 10 Caliente Mexican Food                               carne asada          3.75
+## # ... with 259 more rows</code></pre>
+<p>Basically, it’s consisted of Locations of the restaurant, the type of burritos, and their score. I do some minor cleaning by filtering out NA’s and squishing duplicates.</p>
+<p>I am interested to see if certain types of burritos are more likely to score higher than others. Let’s see how many types there are.</p>
+<pre class="r"><code>burritos %&gt;% 
+  count(type, sort = TRUE)</code></pre>
+<pre><code>## # A tibble: 125 x 2
+##    type            n
+##    &lt;chr&gt;       &lt;int&gt;
+##  1 California     63
+##  2 Carne asada    20
+##  3 Carnitas       12
+##  4 Adobada         9
+##  5 Surf &amp; Turf     9
+##  6 Al pastor       7
+##  7 Breakfast       3
+##  8 Carne Asada     3
+##  9 Custom          3
+## 10 Fish            3
+## # ... with 115 more rows</code></pre>
+<p>That’s almost too many types. Let’s filter out any types that have less than 7 ratings. And then I’m going to turn every type that is not <code>California</code>, into <code>Others</code>.</p>
+<pre class="r"><code>burritos_filtered &lt;- burritos %&gt;%
+  group_by(type) %&gt;% 
+  filter(n() &gt;= 7) %&gt;% 
+  ungroup() %&gt;% 
+  mutate(type = ifelse(type == &quot;California&quot;, type, &quot;Others&quot;))
+
+burritos_filtered %&gt;% 
+  count(type)</code></pre>
+<pre><code>## # A tibble: 2 x 2
+##   type           n
+##   &lt;chr&gt;      &lt;int&gt;
+## 1 California    63
+## 2 Others        57</code></pre>
+<p>Ok, Now that the two categories we want to compare are relatively similar in size, let’s see if the California burrito scores better than others.</p>
+<div id="exploratory-analysis" class="section level2">
+<h2>Exploratory Analysis</h2>
+<p>There’s a couple ways to do this. First, I’m just going to simply average out the scores and make a plot out of it.</p>
+<pre class="r"><code>burritos_filtered %&gt;% 
+  group_by(type) %&gt;% 
+  summarize(score = mean(score)) %&gt;% 
+  ggplot(aes(type, score, fill = factor(score))) +
+  geom_col()</code></pre>
+<pre><code>## `summarise()` ungrouping output (override with `.groups` argument)</code></pre>
+<p><img src="/blog/2020-05-22-analyzing-burritos-ratings-with-bootstrap-resampling/index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>From the look of it, California is slightly scored better than others. But it’s tough to say conclusively, since it’s really close.</p>
+<p>To make things a little more concrete, I’m going to run a simple linear regression model with <code>0</code> in the model, to skip the intercept. So basically if it’s not California, it’s Others. There’s no base value (y-int) that we start with and take away/add scores if it’s California. (hope this makes sense?)</p>
+<pre class="r"><code>burritos_fit &lt;- lm(data = burritos_filtered, score ~ 0 + type)
+
+tidy(burritos_fit)</code></pre>
+<pre><code>## # A tibble: 2 x 5
+##   term           estimate std.error statistic  p.value
+##   &lt;chr&gt;             &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 typeCalifornia     3.57    0.0813      44.0 5.17e-75
+## 2 typeOthers         3.45    0.0855      40.3 7.14e-71</code></pre>
+<p>Same results as the graph, it looks like California is better, but difficult to say it’s definitely better. This is a perfect opportunity to use bootstrap!</p>
+</div>
+<div id="bootstrap" class="section level2">
+<h2>Bootstrap</h2>
+<p>K, so this <code>tidymodels</code> is a collection of modelling packages. I am not familiar with this framework, so I’m excited to give this a shot! So it’s as simple as calling the <code>bootstraps</code> function, feeding it the data, how many times you want to re-sample, and the <code>apparent</code> argument is <code>TRUE</code>, when your sample is the whole population. It returns a dataframe with <code>splits</code> column, containing training/testing splits of data (which I don’t think we’ll need for bootstrapping), and <code>id</code> column.</p>
+<pre class="r"><code>library(tidymodels)
+set.seed(1)
+
+burritos_boot &lt;- bootstraps(burritos_filtered,
+                            times = 1000,
+                            apparent = TRUE)
+
+burritos_boot</code></pre>
+<pre><code>## # Bootstrap sampling with apparent sample 
+## # A tibble: 1,001 x 2
+##    splits           id           
+##    &lt;list&gt;           &lt;chr&gt;        
+##  1 &lt;split [120/48]&gt; Bootstrap0001
+##  2 &lt;split [120/41]&gt; Bootstrap0002
+##  3 &lt;split [120/47]&gt; Bootstrap0003
+##  4 &lt;split [120/42]&gt; Bootstrap0004
+##  5 &lt;split [120/42]&gt; Bootstrap0005
+##  6 &lt;split [120/50]&gt; Bootstrap0006
+##  7 &lt;split [120/43]&gt; Bootstrap0007
+##  8 &lt;split [120/44]&gt; Bootstrap0008
+##  9 &lt;split [120/53]&gt; Bootstrap0009
+## 10 &lt;split [120/42]&gt; Bootstrap0010
+## # ... with 991 more rows</code></pre>
+<p>On top of this dataframe, we’re going to <code>map</code> a linear regression we did above. It’ll make more sense with the output, but essentially, we’re adding as a column the model spec, as well as the result of the linear model like the one you saw before, using each <code>split</code>.</p>
+<pre class="r"><code>burritos_models &lt;- burritos_boot %&gt;% 
+  mutate(model = map(splits, ~ lm(data = ., score ~ 0 + type)),
+         coef_info = map(model, tidy))
+
+burritos_models</code></pre>
+<pre><code>## # Bootstrap sampling with apparent sample 
+## # A tibble: 1,001 x 4
+##    splits           id            model  coef_info       
+##  * &lt;list&gt;           &lt;chr&gt;         &lt;list&gt; &lt;list&gt;          
+##  1 &lt;split [120/48]&gt; Bootstrap0001 &lt;lm&gt;   &lt;tibble [2 x 5]&gt;
+##  2 &lt;split [120/41]&gt; Bootstrap0002 &lt;lm&gt;   &lt;tibble [2 x 5]&gt;
+##  3 &lt;split [120/47]&gt; Bootstrap0003 &lt;lm&gt;   &lt;tibble [2 x 5]&gt;
+##  4 &lt;split [120/42]&gt; Bootstrap0004 &lt;lm&gt;   &lt;tibble [2 x 5]&gt;
+##  5 &lt;split [120/42]&gt; Bootstrap0005 &lt;lm&gt;   &lt;tibble [2 x 5]&gt;
+##  6 &lt;split [120/50]&gt; Bootstrap0006 &lt;lm&gt;   &lt;tibble [2 x 5]&gt;
+##  7 &lt;split [120/43]&gt; Bootstrap0007 &lt;lm&gt;   &lt;tibble [2 x 5]&gt;
+##  8 &lt;split [120/44]&gt; Bootstrap0008 &lt;lm&gt;   &lt;tibble [2 x 5]&gt;
+##  9 &lt;split [120/53]&gt; Bootstrap0009 &lt;lm&gt;   &lt;tibble [2 x 5]&gt;
+## 10 &lt;split [120/42]&gt; Bootstrap0010 &lt;lm&gt;   &lt;tibble [2 x 5]&gt;
+## # ... with 991 more rows</code></pre>
+<p>The <code>model</code> column is the actual model, and <code>coef_info</code> is the results, hopefully it’s not too confusing</p>
+<p>And a quick <code>unnest</code> the <code>coef_info</code></p>
+<pre class="r"><code>burritos_coefs &lt;- burritos_models %&gt;% 
+  unnest(coef_info)
+
+burritos_coefs</code></pre>
+<pre><code>## # A tibble: 2,002 x 8
+##    splits       id         model term      estimate std.error statistic  p.value
+##    &lt;list&gt;       &lt;chr&gt;      &lt;lis&gt; &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+##  1 &lt;split [120~ Bootstrap~ &lt;lm&gt;  typeCali~     3.57    0.0710      50.2 1.67e-81
+##  2 &lt;split [120~ Bootstrap~ &lt;lm&gt;  typeOthe~     3.57    0.0826      43.2 3.39e-74
+##  3 &lt;split [120~ Bootstrap~ &lt;lm&gt;  typeCali~     3.58    0.0714      50.1 2.34e-81
+##  4 &lt;split [120~ Bootstrap~ &lt;lm&gt;  typeOthe~     3.49    0.0890      39.2 1.58e-69
+##  5 &lt;split [120~ Bootstrap~ &lt;lm&gt;  typeCali~     3.47    0.0886      39.2 1.82e-69
+##  6 &lt;split [120~ Bootstrap~ &lt;lm&gt;  typeOthe~     3.29    0.0857      38.4 1.47e-68
+##  7 &lt;split [120~ Bootstrap~ &lt;lm&gt;  typeCali~     3.59    0.0694      51.8 5.21e-83
+##  8 &lt;split [120~ Bootstrap~ &lt;lm&gt;  typeOthe~     3.38    0.0912      37.1 6.81e-67
+##  9 &lt;split [120~ Bootstrap~ &lt;lm&gt;  typeCali~     3.56    0.0780      45.6 8.36e-77
+## 10 &lt;split [120~ Bootstrap~ &lt;lm&gt;  typeOthe~     3.43    0.0780      43.9 5.82e-75
+## # ... with 1,992 more rows</code></pre>
+<p>Great! Now we have linear regression results for every split! Now let’s make a histogram out of this.</p>
+<pre class="r"><code>burritos_coefs %&gt;% 
+  ggplot(aes(estimate, fill = term)) +
+  geom_histogram(alpha = 0.5) +
+  labs(title = &quot;California Burritos are better rated than all other types!&quot;,
+       x = &quot;Score&quot;,
+       y = &quot;Count&quot;)</code></pre>
+<pre><code>## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+<p><img src="/blog/2020-05-22-analyzing-burritos-ratings-with-bootstrap-resampling/index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p>This histogram shows where all the results from 1000 resamples landed. Judging from it, <code>California</code> clearly outperforming <code>Others</code>!</p>
+</div>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>There you have it folks. We looked at how we can use bootstrapping in less than 130 lines of codes! (including texts!) This was really fun for me, I can see myself using this a lot with work and pretty much anytime I need to validate something. Hopefully you found it helpful as well.</p>
+</div>

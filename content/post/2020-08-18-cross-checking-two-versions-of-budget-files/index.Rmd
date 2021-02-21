@@ -1,0 +1,288 @@
+---
+title: Cross-Checking Two Versions of Budget Files
+author: Jiwan Heo
+date: '2020-08-18'
+tags:
+  - data processing
+---
+
+Thanks [Marc](https://www.youtube.com/channel/UCvYzKBsnJCswiABGRc9h2Eg) for reminding me to write!
+
+Hey everyone, hope you're all doing well! Lately, I've been spending most of my free time learning to make website designs with CSS. Some people rip of CSS for not being a real programming language, but it's a tricky language to master! Unlike other languages like Python, with CSS, you really don't know when something went wrong, unless you understand exactly what the impact of adding an extra line of code will do. This slows me down often, but oh well ¯\\_(ツ)_/¯
+
+## Let's get into it!
+
+Today, I wanted to share a trick that really saved me a ton of time at work. Without going into too much detail, the task was to verify a file that contains a series of yearly budget numbers against another file that has similar information. 
+
+Seems pretty simple right? Sort the numbers by month, line them up next to each other, and do a "this cell equals that cell" formula, and drag it down?
+
+```{r echo = FALSE}
+knitr::include_graphics("wellyes.jpg")
+```
+
+
+While the first file was in a beautiful format, unfortunately the other one was just too messy for me to select all numbers at once.
+
+Let me illustrate what I mean.
+
+## Data
+
+Let's say we're looking at next year's sales quota and forecast at different cities. I've set up 5 cities from 2 provinces, with some random data, so we have something to work with. This is my preferred format for pretty much anything. If all data was like this, I probably wouldn't have a job lol
+
+```{r echo = FALSE, fig.cap = "Beautifully formatted sheet"}
+knitr::include_graphics("sheet1.png")
+```
+
+Now look at this sheet. This is what most pivot tables look like, with Province & City as rows, Month as columns, and Sales Quota & Sales Forecast as values. I've changed a couple numbers without thinking, so we got some work ahead of us, detecting where they are! 
+
+```{r echo = FALSE, fig.cap = "Wide-form sheet"}
+knitr::include_graphics("sheet2.png")
+```
+
+The worksheet given to me was a tad messier than this, but you get the idea. 
+
+## Processing
+
+"wHy dON't yOu jUsT uSe pIvOtTAblE?"
+
+idk, I love using R to solve business problems.
+
+### Load data into R
+
+I'm only gonna use 2 packages. `openxlsx` to open Excel, and `tidyverse` to wrangle.
+```{r message = FALSE, warning = FALSE}
+library(openxlsx)
+library(tidyverse)
+```
+
+Make sure you set the `skipEmptyRows` & `skipEmptyCols` to FALSE. Pretty dumb, but the default value is TRUE, so it really throws you off if you're not aware.
+
+I like using `clean_names()` so that all column names are just one word.
+```{r}
+sheet1 <- read.xlsx("sheet1.xlsx", skipEmptyRows = FALSE, skipEmptyCols = FALSE) %>% 
+  janitor::clean_names()
+
+sheet1 %>% head(10)
+```
+
+I really wish there was something like `head()` for columns, but for now, I'll just print the whole thing
+
+```{r}
+sheet2 <- read.xlsx("sheet2.xlsx", skipEmptyRows = FALSE, skipEmptyCols = FALSE)
+
+sheet2
+```
+
+### Sheet1 Clean
+
+Not much to clean here, but I'll turn all my numbers (quota & forecast) into a key-value format. This will be useful when we make charts later!
+
+```{r}
+sheet1 <- sheet1 %>% 
+  gather(type, value, -c(province, city, month))
+
+sheet1 %>% head(10)
+```
+
+You kinda see what's going on here, the column names are in the "type" column, and the corresponding value is in the "value" column. If I printed the end of this, it'll show sales_forecast too. Like so:
+
+```{r}
+sheet1 %>% tail(10)
+```
+
+This is all I'm going to do! Let's turn sheet2 like this
+
+### Sheet2 Clean
+
+Remember how sheet2 looked like up top? I'll print the first few columns, now that you know what it looks like, no point wasting space. When you see the below code popping up again, I'm just printing the first 6 columns.
+
+```{r}
+sheet2[, 1:6]
+```
+
+#### Column Names
+
+I really don't like how the first two column names are useless (X1, X2). These are just random names that R assigns when there is no column name explicitly specified. 
+
+Let's get rid of them. The idea is to combine the column names and the first row together, set that as the column name, and get rid of the first row.
+
+```{r}
+new_col_names <- paste(sheet2[1,], names(sheet2), sep = "-")
+
+new_col_names
+```
+
+Now that we have the new column names, let's set this list as the column names, and get rid of the first row. (Second row to last row)
+
+```{r}
+names(sheet2) <- new_col_names
+
+sheet2 <- sheet2[2:nrow(sheet2),]
+
+sheet2[, 1:6]
+```
+
+I'm going to manipulate the column names later on except the first two, so might as well clean the good ones now.
+
+```{r}
+names(sheet2)[1:2] <- c("province", "city")
+
+sheet2[, 1:6]
+```
+
+#### Extract and Transform (The dreaded buzzword "ETL" haha!)
+
+We still haven't created "month", "type" columns like sheet1 :cry: Or, if you're a cup-is-half-full type person, at least we've got "province" & "city" columns! :smile:  
+
+This is exactly what leads into the next step. Let's turn everything else that is not "province", or "city", into a key-value format. Here are the first 25 rows. 
+
+```{r}
+sheet2 <- sheet2 %>% 
+  gather(key, value, -c(province, city))
+
+sheet2 %>% head(25)
+```
+
+Here's the beauty of processing.
+
+We __separate__ the key column into two new columns, by splitting the `-`
+```{r}
+sheet2 <- sheet2 %>% 
+  separate(key, into = c("type", "month"), sep = "\\-")
+
+sheet2 %>% head(10)
+```
+
+OK! It looks really similar to sheet1 now.
+
+#### Final touches
+
+Just a couple more steps left in processing. Let's remind ourselves what sheet1 looks like
+
+```{r}
+sheet1 %>% head(10)
+```
+
+We need to clean the word "Sales Quota", and "Sales Forecast" into lowercase
+
+```{r}
+sheet2 <- sheet2 %>% 
+  mutate(type = str_replace(tolower(type), "\\s", "\\_"))
+
+sheet2 %>% head(10)
+```
+
+Also, I'm going to change the name of the column "value" into something that is not "value", because that name already exists in sheet1, so it collides when they join, as you'll see.
+
+```{r}
+sheet2 <- sheet2 %>% 
+  rename(sheet2_value = value)
+
+sheet2 %>% head(10)
+```
+
+That's it for processing raw inputs. Checking their dimensions give us the mental check.
+
+```{r}
+dim(sheet1)
+```
+
+```{r}
+dim(sheet2)
+```
+
+### Join Two Tables
+
+I recommend left-joining the bigger set with the smaller set. In this scenario, there's no discrepancy btw tow tables. So I can use inner-join, but I'm still gonna use left-join.
+
+```{r}
+joined <- sheet1 %>% 
+  left_join(sheet2, by = c("province", "city", "type", "month"))
+
+joined %>% head(10)
+```
+
+And Voila, we have a dataframe that has sheet1 value in one column, and sheet 2 value in the other column!
+
+Now, if we make a column that checks if two values are equal to each other, we can count it, and do other stuff with it. 
+
+Also, let's put in an iferror.
+
+```{r}
+joined <- joined %>% 
+  mutate(is_match = value == sheet2_value,
+         is_match = replace_na(is_match, FALSE)) 
+  
+
+joined %>% head(10)
+```
+
+Now we're ready to make some analysis & viz!
+
+## Analysis and Visualization
+
+First of all, how many are incorrect?
+
+```{r}
+joined %>% summarize(mean(is_match == FALSE))
+```
+
+22%! I must have changed a lot!
+
+I might have talked about this already, but `summarize -> mean -> boolean` is a neat trick to count the percentage of rows that meet the boolean.
+
+While we're at is, let's see wow many wrong's were caused by missing values in the second sheet?
+
+```{r}
+joined %>% 
+  filter(is_match == FALSE) %>% 
+  summarize(mean(is.na(sheet2_value)))
+```
+
+This is super valuable info. It tells me "of the 22% discrepancies btw the two files, 34% come from missing data in the second file."
+
+Anyways, I like using `count()` to quickly cycle between visualizations. Some questions I might be asking myself are:
+
+Q1: Where were the wrong's? 
+
+A1: London and Edmonton.
+```{r}
+theme_set(theme_light())
+
+joined %>% 
+  filter(is_match == FALSE) %>% 
+  count(province, city) %>% 
+  mutate(city = fct_reorder(city, n)) %>% 
+  ggplot(aes(city, n, fill = province)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Inconsistency between two files",
+       x = "City",
+       y = "# Mismatches")
+```
+
+Q2: Was there a certain month that was forecast or budget wereparticularly wrong?
+
+A2: Fourth quarter was brutal.
+```{r}
+theme_set(theme_light())
+
+joined %>% 
+  filter(is_match == FALSE) %>% 
+  count(month) %>% 
+  mutate(month = fct_reorder(month, n)) %>% 
+  ggplot(aes(month, n)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Inconsistency between two files",
+       x = "Months",
+       y = "# Mismatches")
+```
+
+## Conclusion
+
+So yea, here's how I would tackle these types of problems. A SQL-ly solution, that makes use of some of the beautiful functions in `tidyverse`! 
+
+I like this solution because once you set this up, and as long as the data format doesn't change in either files, you can test a bunch of different files. Maybe you went back and filled in the missing values. Then, your accuracy goes up, and maybe then, you can focus on one city at a time.
+
+Thanks for sticking around, I had a ton of fun doing this!
