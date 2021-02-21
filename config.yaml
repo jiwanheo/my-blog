@@ -51,3 +51,8 @@ menu:
       name: About
       url: /about/
       weight: 300
+
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
