@@ -1,28 +1,54 @@
----
-aliases:
-- about-us
-- about-hugo
-- contact
-author: Hugo Authors
-date: "2019-02-28"
-description: Hugo, the world's fastest framework for building websites
-title: About
----
++++
+title = "About"
++++
 
-Written in Go, Hugo is an open source static site generator available under the [Apache Licence 2.0.](https://github.com/gohugoio/hugo/blob/master/LICENSE) Hugo supports TOML, YAML and JSON data file types, Markdown and HTML content files and uses shortcodes to add rich content. Other notable features are taxonomies, multilingual mode, image processing, custom output formats, HTML/CSS/JS minification and support for Sass SCSS workflows.
+Hi! My name is Jiwan Heo (Same pronunciation as Obi-Wan Kenobi) and I'm a business intelligence advisor at Minto Group, where I work on all things related to data & BI in the revenue management team. I finished my undergrad in finance/statistics at Carleton U in fall 2019, and was lucky enough to start my career before 2020 😅 
 
-Hugo makes use of a variety of open source projects including:
+I love using `tidyverse` & `tidymodels` to try out new statistical concepts I'd just learned about! Also, I'm very passionate about educating other about the benefits of using R and RStudio. (A nice Rmarkdown report with codes hidden, in my opinion, is one of the best business tools around)
 
-* https://github.com/yuin/goldmark
-* https://github.com/alecthomas/chroma
-* https://github.com/muesli/smartcrop
-* https://github.com/spf13/cobra
-* https://github.com/spf13/viper
+When I'm not on my laptop, I like cooking, playing guitar and learning french.
 
-Hugo is ideal for blogs, corporate websites, creative portfolios, online magazines, single page applications or even a website with thousands of pages.
+This blog is built with [blogdown](https://github.com/rstudio/blogdown) and [Hugo](https://gohugo.io/), and deployed using [Netlify](https://www.netlify.com/).
 
-Hugo is for people who want to hand code their own website without worrying about setting up complicated runtimes, dependencies and databases.
+## Skills and Tools
 
-Websites built with Hugo are extremelly fast, secure and can be deployed anywhere including, AWS, GitHub Pages, Heroku, Netlify and any other hosting provider.
+* Statistical Modeling, Business Intelligence, Data Analysis
+* Effective, concise communication
+* R, SQL, Power BI
 
-Learn more and contribute on [GitHub](https://github.com/gohugoio).
+## Experience
+
+#### Business Intelligence Advisor, _Minto Group_
+2021 - Current
+
+
+<!-- 
+
+* Implemented cross-departmental data standards to eliminate reporting discrepancies.
+
+--->
+#### Data Analyst, _Minto Group_
+2019 - 2020
+
+* Drove revenue maximizing insights in the real estate industry by modeling/conducting statistical analyses.
+* Communicated the results of analyses to all levels of audience through R data visualizations and PBI apps.
+* Worked with financial budget models to perform forecast and variance analyses.
+* Provided ETL business testing & data validation.
+
+#### Co-op Researcher, _City of Ottawa - OC Transpo_
+
+2018
+* Automated updating maintenance schedules of 1,000+ bus stops in the city.
+* Helped improve various HR budget calculations. (overtime eligibility, sick days)
+
+#### Assistant Program Coordinator, _Ontario's Lottery & Gaming Corp._
+2016-2017
+
+* Communicated with clients to plan logistics of marketing events. (Toronto Pride, Caribana, Ottawa Jazz Festival ...)
+* Managed inventory system in a distribution centre.
+
+## Education
+
+Carleton University - BComm in Finance with Statistics Minor, 2020
+
+
