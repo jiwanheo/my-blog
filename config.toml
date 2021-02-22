@@ -1,0 +1,74 @@
+baseURL = "https://jiwanheo.rbind.io/"
+languageCode = "en"
+DefaultContentLanguage = "en"
+title = "Blog of Jiwan Heo"
+theme = "anatole"
+summarylength = 10
+enableEmoji = true
+enableRobotsTXT = true
+
+# Enable Disqus
+disqusShortname = "jiwanheo"
+
+# Syntax highlighting
+pygmentsUseClasses = true
+pygmentsCodeFences = true
+pygmentsCodefencesGuessSyntax = true
+
+[params]
+title = "Jiwan Heo"
+author = "Jiwan Heo"
+description = "Hi there"
+profilePicture = "images/avatar.png"
+keywords = ""
+favicon = "favicons/"
+mainSections = ["post"]
+sharing_image = "images/avatar.png"
+doNotLoadAnimations = true
+indexDateFormat = "2006-01-02"
+listDateFormat = "Jan 2"
+singleDateFormat = "2006-01-02"
+
+## Math settings
+[params.math]
+enable = false  # options: true, false. Enable math support globally, default: false. You can always enable math on per page.
+use = "katex"  # options: "katex", "mathjax". default is "katex".
+
+## Social links
+# use 'fab' when brand icons, use 'fas' when standard solid icons.
+[[params.socialIcons]]
+icon = "fab fa-linkedin"
+title = "Linkedin"
+url = "https://www.linkedin.com/in/jiwanheo/"
+
+[[params.socialIcons]]
+icon = "fab fa-github"
+title = "GitHub"
+url = "https://www.github.com/jiwanheo"
+
+[[params.socialIcons]]
+icon = "fas fa-envelope"
+title = "e-mail"
+url = "mailto:jiwanheo123@gmail.com"
+
+## Menu items
+
+[menu]
+
+  [[menu.main]]
+  name = "Home"
+  identifier = "home"
+  weight = 100
+  url = "/"
+
+  [[menu.main]]
+  name = "Posts"
+  weight = 200
+  identifier = "posts"
+  url = "/post/"
+
+  [[menu.main]]
+  name = "About"
+  weight = 300
+  identifier = "about"
+  url = "/about/"
