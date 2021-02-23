@@ -4,19 +4,23 @@ author: Jiwan Heo
 date: '2019-10-12'
 tags:
   - data processing
+thumbnail: "featured.jpg"
+thumbnaildesc: "Photo by @mbaumi"
 ---
 
-</style>
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
 <p>Hey, this short post is going to go over how to better format your excel sheets for data analytics purposes. If you’ve ever worked with Excel in your professional/personal life, you’ve most likely ran into a budget sheet that looks like this.</p>
 <div class="figure"><span id="fig:unnamed-chunk-1"></span>
-<img src="example.png" alt="Shoutout to dahkai.com, you insecure website" width="683" />
+<img src="example.png" alt="Shoutout to dahkai.com, you insecure website"  />
 <p class="caption">
 Figure 1: Shoutout to dahkai.com, you insecure website
 </p>
 </div>
 <p>There’s nothing too wrong about sheets like this when the file is relatively small, and you’re just working within Excel. But even then, there are probably a bunch of consolidated cells, and hidden rows/columns that makes it hard for you to keep track of the formulas. Oh, and God forbid if someone else made that sheet, and you have to figure out how they constructed it. I personally find this really frustrating about Excel, and often choose to not use it at all. Today, I’m just gonna share with y’all quickly how I like to format my data.</p>
 <div class="figure"><span id="fig:unnamed-chunk-2"></span>
-<img src="prices.png" alt="Annual revenues have their own individual columns" width="683" />
+<img src="prices.png" alt="Annual revenues have their own individual columns"  />
 <p class="caption">
 Figure 2: Annual revenues have their own individual columns
 </p>
@@ -27,12 +31,12 @@ Figure 2: Annual revenues have their own individual columns
 company_revenues &lt;- read_csv(&quot;prices.csv&quot;)
 company_revenues</code></pre>
 <pre><code>## # A tibble: 2 x 15
-##   company `2005` `2006` `2007` `2008` `2009` `2010` `2011` `2012` `2013`
-##   &lt;chr&gt;    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
-## 1 Apple    13931  19315  24578  37491  42905  65225 108249 156508 170910
-## 2 Micros~  39788  44282  51122  60420  58437  62484  69943  73723  77849
-## # ... with 5 more variables: `2014` &lt;dbl&gt;, `2015` &lt;dbl&gt;, `2016` &lt;dbl&gt;,
-## #   `2017` &lt;dbl&gt;, `2018` &lt;dbl&gt;</code></pre>
+##   company `2005` `2006` `2007` `2008` `2009` `2010` `2011` `2012` `2013` `2014`
+##   &lt;chr&gt;    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+## 1 Apple    13931  19315  24578  37491  42905  65225 108249 156508 170910 182795
+## 2 Micros~  39788  44282  51122  60420  58437  62484  69943  73723  77849  86833
+## # ... with 4 more variables: `2015` &lt;dbl&gt;, `2016` &lt;dbl&gt;, `2017` &lt;dbl&gt;,
+## #   `2018` &lt;dbl&gt;</code></pre>
 <p>This format is a little difficult to work with, because the unspoken agreement of most programming languages is that rows represent each instance of an object, and columns represent the characteristics about the objects. But what we have here is one characteristics (revenue) spanned over 14 columns.</p>
 <p>To remedy this, let’s put the years in one column, and another column that represents the revenue for that year. In other words, I’m going to transpose the data. Firstly, I’m going to <code>gather</code> the data, which grabs the names of each column as <code>key</code> and what’s inside that column as <code>value</code>. I chose to use the words key and value, but you can use any other words that make the most sense to you.</p>
 <pre class="r"><code>company_revenues %&gt;% 
@@ -81,7 +85,7 @@ company_revenues %&gt;%
   labs(title = &quot;Annual revenues of Apple and Microsoft&quot;,
        x = &quot;Time&quot;,
        y = &quot;Revenue in millions&quot;)</code></pre>
-<p><img src="/post/2019-10-12-improving-usability-of-budget-excel-sheets/index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
 <p>If you’d like, you can actually give each company a column of their own. In other words, we can <code>spread</code> the revenues by company.</p>
 <pre class="r"><code>company_revenues %&gt;% 
   gather(key, value, -company) %&gt;% 
@@ -113,5 +117,5 @@ company_revenues %&gt;%
   labs(title = &quot;Apple revenue over the years&quot;,
        x = &quot;Time&quot;,
        y = &quot;Revenue in millions&quot;)</code></pre>
-<p><img src="/post/2019-10-12-improving-usability-of-budget-excel-sheets/index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
 <p>Hope you got something out of this. See you next time :)</p>

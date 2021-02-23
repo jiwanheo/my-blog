@@ -4,12 +4,24 @@ author: Jiwan Heo
 date: '2019-10-27'
 tags:
   - Time series
+thumbnail: "featured.jpg"
+thumbnaildesc: "Photo by @sonjalangford"
 ---
 
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<style>
+p.caption {
+  font-size: 0.75em;
+  font-style: italic;
+  color: black;
+  background-color: #f2f2f2;
+}
 </style>
 <p>I was in a meeting this week with a software company, and came across a machine learning technique that I wasn’t too familiar with, <em>ARIMA</em>. Instinctively, I wanted to look it up and make a short post about it with an easy example. But it turns out that there was a lot of stuff that I needed to know before even approaching this concept. I despise long posts explaining things, so, I think it’s best to split up this whole ARIMA thing into small chunks.</p>
 <div class="figure"><span id="fig:unnamed-chunk-1"></span>
-<img src="jackie.jpg" alt="What is ARIMA????" width="237" />
+<img src="jackie.jpg" alt="What is ARIMA????"  />
 <p class="caption">
 Figure 1: What is ARIMA????
 </p>
@@ -28,7 +40,7 @@ constant &lt;- plot(x, y, type=&quot;l&quot;,
                  main = &quot;Graph 1&quot;, xlab = &quot;Time&quot;, ylab = &quot;&quot;)
 not_constant &lt;- plot(x, y+x, type = &quot;l&quot;,
                      main = &quot;Graph 2&quot;, xlab = &quot;Time&quot;, ylab = &quot;&quot;)</code></pre>
-<p><img src="/post/2019-10-27-time-series-analysis-basics-stationarity/index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 <p>See how the first graph (sine wave) is centered around the mean of 0, and the second one doesn’t really have a common mean. No matter which intervals you pick from the first graph, the mean will be 0, but you can’t say the same with the second graph, as it depends on which interval you pick along the x-axis.</p>
 <p><strong>2. Constant variance over time</strong> (how much the data fluctuates)</p>
 <p>This one’s pretty easy. Variance essentially means what is the difference between the peak and the trough of a period, or high and low. You want this to be consistent, whichever time period you pick.</p>
@@ -42,7 +54,7 @@ constant &lt;- plot(x, y, type=&quot;l&quot;,
                  main = &quot;Graph 1&quot;, xlab = &quot;Time&quot;, ylab = &quot;&quot;)
 not_constant &lt;- plot(x, y_, type = &quot;l&quot;,
                      main = &quot;Graph 2&quot;, xlab = &quot;Time&quot;, ylab = &quot;&quot;)</code></pre>
-<p><img src="/post/2019-10-27-time-series-analysis-basics-stationarity/index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
 <p>The first graph shows a constant variance whereever you look at, but you can’t say the same with the second graph. Period between 0 &amp; 3 is way larger than 10 &amp; 13.</p>
 <p><strong>3. Covariance of two values that is independent of time</strong></p>
 <p>Covariance is just how one variable moves with another variable. Using a stock example, it is how price at <em>t</em> moves in relation to price at <em>t-1</em>. If they are independent of time, the change should be the same where ever you look at.</p>
@@ -58,10 +70,10 @@ constant &lt;- plot(x, y, type=&quot;l&quot;,
 
 not_constant &lt;- plot(x, y_, type = &quot;l&quot;,
                      main = &quot;Graph 2&quot;, xlab = &quot;Time&quot;, ylab = &quot;&quot;)</code></pre>
-<p><img src="/post/2019-10-27-time-series-analysis-basics-stationarity/index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <p>You’ll notice in the second graph (don’t ask me what it is, I just played around with the stuff I found on stackoverflow :sweat_smile:), that the density of the waves are irregular, depending on where you look in the x-axis. This is what happens when the covariance of two variables (or price of a stock at <em>t</em> and <em>t-1</em>) is dependent on time. The interval between 5 &amp; 10 is very different from that of 20 &amp; 25 in the second graph, whereas it doesn’t change at all in the first graph.</p>
 <div class="figure"><span id="fig:unnamed-chunk-5"></span>
-<img src="thats_all.jpg" alt="BYE" width="275" />
+<img src="thats_all.jpg" alt="BYE"  />
 <p class="caption">
 Figure 2: BYE
 </p>

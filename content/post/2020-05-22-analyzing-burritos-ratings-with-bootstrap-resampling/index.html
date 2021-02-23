@@ -4,8 +4,11 @@ author: Jiwan Heo
 date: '2020-05-22'
 tags:
   - stats
+thumbnail: "featured.jpg"
+thumbnaildesc: "Photo by @creativeheadline"
 ---
 
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
 
 
 <p>You ever had to make a big decision out of a small dataset, and weren’t sure if you’re making the right call? Maybe you’re conducting a survey to see how COVID affected the spending habits of university students vs people in their 40s, and only 10 students responded. Or maybe you’re an analyst in a big company, who’s trying to make a pricing decision based on past performances, but you only have 3 weeks of data. What these two problems have in common is the lack of sample size and the uncertainty of the decisions that come from it. I, for one, asked myself many times, “K, I did all the analysis correctly, but does this really tell the whole story?”</p>
@@ -68,7 +71,7 @@ burritos_filtered %&gt;%
   count(type)</code></pre>
 <pre><code>## # A tibble: 2 x 2
 ##   type           n
-##   &lt;chr&gt;      &lt;int&gt;
+## * &lt;chr&gt;      &lt;int&gt;
 ## 1 California    63
 ## 2 Others        57</code></pre>
 <p>Ok, Now that the two categories we want to compare are relatively similar in size, let’s see if the California burrito scores better than others.</p>
@@ -80,8 +83,7 @@ burritos_filtered %&gt;%
   summarize(score = mean(score)) %&gt;% 
   ggplot(aes(type, score, fill = factor(score))) +
   geom_col()</code></pre>
-<pre><code>## `summarise()` ungrouping output (override with `.groups` argument)</code></pre>
-<p><img src="/blog/2020-05-22-analyzing-burritos-ratings-with-bootstrap-resampling/index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
 <p>From the look of it, California is slightly scored better than others. But it’s tough to say conclusively, since it’s really close.</p>
 <p>To make things a little more concrete, I’m going to run a simple linear regression model with <code>0</code> in the model, to skip the intercept. So basically if it’s not California, it’s Others. There’s no base value (y-int) that we start with and take away/add scores if it’s California. (hope this makes sense?)</p>
 <pre class="r"><code>burritos_fit &lt;- lm(data = burritos_filtered, score ~ 0 + type)
@@ -129,7 +131,7 @@ burritos_models</code></pre>
 <pre><code>## # Bootstrap sampling with apparent sample 
 ## # A tibble: 1,001 x 4
 ##    splits           id            model  coef_info       
-##  * &lt;list&gt;           &lt;chr&gt;         &lt;list&gt; &lt;list&gt;          
+##    &lt;list&gt;           &lt;chr&gt;         &lt;list&gt; &lt;list&gt;          
 ##  1 &lt;split [120/48]&gt; Bootstrap0001 &lt;lm&gt;   &lt;tibble [2 x 5]&gt;
 ##  2 &lt;split [120/41]&gt; Bootstrap0002 &lt;lm&gt;   &lt;tibble [2 x 5]&gt;
 ##  3 &lt;split [120/47]&gt; Bootstrap0003 &lt;lm&gt;   &lt;tibble [2 x 5]&gt;
@@ -169,7 +171,7 @@ burritos_coefs</code></pre>
        x = &quot;Score&quot;,
        y = &quot;Count&quot;)</code></pre>
 <pre><code>## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
-<p><img src="/blog/2020-05-22-analyzing-burritos-ratings-with-bootstrap-resampling/index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
 <p>This histogram shows where all the results from 1000 resamples landed. Judging from it, <code>California</code> clearly outperforming <code>Others</code>!</p>
 </div>
 </div>

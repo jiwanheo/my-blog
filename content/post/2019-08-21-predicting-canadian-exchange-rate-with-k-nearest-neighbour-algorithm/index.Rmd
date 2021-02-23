@@ -4,20 +4,13 @@ author: Jiwan Heo
 date: '2019-08-21'
 tags:
   - stats
+thumbnail: "featured.jpg"
+thumbnaildesc: "Photo by @aviosly"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-<style>
-p.caption {
-  font-size: 0.75em;
-  font-style: italic;
-  color: black;
-  background-color: #f2f2f2;
-}
-</style>
 
 The K-nearest Neighbour Algorithm (kNN) is a simple, yet effective problem-solving tool. After a brief explanation of the topic, we'll see how kNN can be used in a time series by using an example of the Canadian/US foreign exchange rate, with the help of `tsfknn` package in R. [Read more about tsfknn](https://cran.r-project.org/web/packages/tsfknn/index.html)
 

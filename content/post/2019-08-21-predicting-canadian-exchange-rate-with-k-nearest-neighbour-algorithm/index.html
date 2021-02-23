@@ -4,14 +4,19 @@ author: Jiwan Heo
 date: '2019-08-21'
 tags:
   - stats
+thumbnail: "featured.jpg"
+thumbnaildesc: "Photo by @aviosly"
 ---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
 
 <p>The K-nearest Neighbour Algorithm (kNN) is a simple, yet effective problem-solving tool. After a brief explanation of the topic, we’ll see how kNN can be used in a time series by using an example of the Canadian/US foreign exchange rate, with the help of <code>tsfknn</code> package in R. <a href="https://cran.r-project.org/web/packages/tsfknn/index.html">Read more about tsfknn</a></p>
 <div id="what-is-k-nearest-neighbour" class="section level2">
 <h2>What is K-nearest neighbour?</h2>
 <p>Below is a graph with two arbitrary classes: green squares and blue triangles. Our goal is to correctly predict whether a random new point (red circle) should be classified as a blue triangle or a green square. To do this, kNN identifies top <em>k</em> closest points. (in this case 3 in the red boundary) Of the 3, there are 2 blue triangles, and one green square. kNN then decides that the red circle must be a blue triangle based on chances. (66.66% vs 33.33%)</p>
 <div class="figure"><span id="fig:unnamed-chunk-1"></span>
-<img src="/post/2019-08-21-predicting-canadian-exchange-rate-with-k-nearest-neighbour-algorithm/index_files/figure-html/unnamed-chunk-1-1.png" alt="knn applied to a single point" width="672" />
+<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-1-1.png" alt="knn applied to a single point" width="672" />
 <p class="caption">
 Figure 1: knn applied to a single point
 </p>
@@ -58,7 +63,7 @@ exchange %&gt;% head()</code></pre>
 <pre class="r"><code>exchange_ts &lt;- ts(exchange$rate, start=c(1972,1), end=c(2018,12), frequency=12)</code></pre>
 <p>Before looking at the entire dataset, let’s see if the past decade had any other similar patterns that CAD/USD experienced in 2018.</p>
 <div class="figure"><span id="fig:unnamed-chunk-5"></span>
-<img src="/post/2019-08-21-predicting-canadian-exchange-rate-with-k-nearest-neighbour-algorithm/index_files/figure-html/unnamed-chunk-5-1.png" alt="kNN captured 2 neighbours" width="672" />
+<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-5-1.png" alt="kNN captured 2 neighbours" width="672" />
 <p class="caption">
 Figure 2: kNN captured 2 neighbours
 </p>
@@ -74,7 +79,7 @@ autoplot(pred, highlight = &quot;neighbors&quot;, faceting = FALSE) +
        x = &quot;&quot;,
        y = &quot;Value of 1 Canadian dollar in USD&quot;)</code></pre>
 <div class="figure"><span id="fig:unnamed-chunk-6"></span>
-<img src="/post/2019-08-21-predicting-canadian-exchange-rate-with-k-nearest-neighbour-algorithm/index_files/figure-html/unnamed-chunk-6-1.png" alt="Lots of neighbours from the mid 80's and the mid 90's" width="672" />
+<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-6-1.png" alt="Lots of neighbours from the mid 80's and the mid 90's" width="672" />
 <p class="caption">
 Figure 3: Lots of neighbours from the mid 80’s and the mid 90’s
 </p>
@@ -84,7 +89,7 @@ Figure 3: Lots of neighbours from the mid 80’s and the mid 90’s
 <h2>Prediction</h2>
 <p>The red line is my prediction with kNN. As you can see, it’s dead wrong. I predicted the rate to stay at the similar level without much volatility, but the actual data from January to July was quite different. Although my model somewhat predicted the most recent rate, it failed to capture the ups and downs in 2019.</p>
 <div class="figure"><span id="fig:unnamed-chunk-7"></span>
-<img src="/post/2019-08-21-predicting-canadian-exchange-rate-with-k-nearest-neighbour-algorithm/index_files/figure-html/unnamed-chunk-7-1.png" alt="Oh well" width="672" />
+<img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-7-1.png" alt="Oh well" width="672" />
 <p class="caption">
 Figure 4: Oh well
 </p>

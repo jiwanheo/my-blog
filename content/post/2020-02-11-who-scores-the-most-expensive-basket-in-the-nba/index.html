@@ -5,8 +5,11 @@ date: '2020-02-11'
 tags:
   - NBA
   - data processing
+thumbnail: "featured.jpg"
+thumbnaildesc: "Photo by @markusspiske"
 ---
 
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
 
 
 <p>Hey! Just a quick post after work. A couple weeks ago, my roommate showed me a tweet that listed soccer players with the most expensive contracts. (I think it was the Premier League?) Of course, I wanted to make something similar with NBA players. I made some quick bar graphs that night showing $ earned per made basket, which was cool, but I wanted to make it a little better.</p>
@@ -133,7 +136,7 @@ per_bucket %&gt;%
         x = &quot;&quot;,
         y = &quot;$ per field goal made&quot;,
         fill = &quot;# made field goal&quot;) </code></pre>
-<p><img src="/post/2020-02-11-who-scores-the-most-expensive-basket-in-the-nba/index_files/figure-html/unnamed-chunk-7-1.png" width="100%" /></p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-7-1.png" width="100%" /></p>
 <p>Don’t really see too obvious a pattern. Some of them are defense-first guys (Green, Bazemore &amp; Biyombo), while some are legit scorers (Hayward, George &amp; Lowry). Now, let’s look at the most economically friendly contracts.</p>
 </div>
 <div id="the-cheapest-baskets" class="section level3">
@@ -156,7 +159,7 @@ per_bucket %&gt;%
   x = &quot;&quot;,
   y = &quot;$ per field goal made&quot;,
   fill = &quot;# made field goal&quot;) </code></pre>
-<p><img src="/post/2020-02-11-who-scores-the-most-expensive-basket-in-the-nba/index_files/figure-html/unnamed-chunk-8-1.png" width="100%" /></p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-8-1.png" width="100%" /></p>
 <p>Obvious pattern is the youth of this group of players. All of these guys are in their early-mid 20s, who are under their rookie contracts. We see Toronto’s Pascal Siakam &amp; Terrance Davis in the mix, which is nice to see from a Raps fan. Furthermore, there are 4 Golden State Warriors (5 if you count Glenn Robinson who got traded this month). This makes sense, as Golden State’s stars have been injured all season, forcing them to play their inexperienced players.</p>
 </div>
 <div id="ky-bowman" class="section level3">

@@ -5,6 +5,8 @@ date: '2020-08-31'
 tags:
   - bookmarks
   - webdev
+thumbnail: "featured.jpg"
+thumbdesc: "Photo by @mohammadfathollahi"
 ---
 
 For someone who's learning CSS, I should really start styling this blog.

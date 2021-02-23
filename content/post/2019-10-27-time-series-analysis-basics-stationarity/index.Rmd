@@ -4,6 +4,8 @@ author: Jiwan Heo
 date: '2019-10-27'
 tags:
   - Time series
+thumbnail: "featured.jpg"
+thumbnaildesc: "Photo by @sonjalangford"
 ---
 
 <style>

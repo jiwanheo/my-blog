@@ -4,6 +4,8 @@ author: Jiwan Heo
 date: '2020-08-18'
 tags:
   - data processing
+thumbnail: "featured.jpg"
+thumbdesc: "Photo by @northfolk"
 ---
 
 Thanks [Marc](https://www.youtube.com/channel/UCvYzKBsnJCswiABGRc9h2Eg) for reminding me to write!

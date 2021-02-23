@@ -4,8 +4,10 @@ author: Jiwan Heo
 date: '2020-08-18'
 tags:
   - data processing
+thumbnail: "featured.jpg"
 ---
 
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
 
 
 <p>Thanks <a href="https://www.youtube.com/channel/UCvYzKBsnJCswiABGRc9h2Eg">Marc</a> for reminding me to write!</p>
@@ -14,7 +16,7 @@ tags:
 <h2>Let’s get into it!</h2>
 <p>Today, I wanted to share a trick that really saved me a ton of time at work. Without going into too much detail, the task was to verify a file that contains a series of yearly budget numbers against another file that has similar information.</p>
 <p>Seems pretty simple right? Sort the numbers by month, line them up next to each other, and do a “this cell equals that cell” formula, and drag it down?</p>
-<p><img src="wellyes.jpg" width="480" /></p>
+<p><img src="wellyes.jpg" /><!-- --></p>
 <p>While the first file was in a beautiful format, unfortunately the other one was just too messy for me to select all numbers at once.</p>
 <p>Let me illustrate what I mean.</p>
 </div>
@@ -22,14 +24,14 @@ tags:
 <h2>Data</h2>
 <p>Let’s say we’re looking at next year’s sales quota and forecast at different cities. I’ve set up 5 cities from 2 provinces, with some random data, so we have something to work with. This is my preferred format for pretty much anything. If all data was like this, I probably wouldn’t have a job lol</p>
 <div class="figure"><span id="fig:unnamed-chunk-2"></span>
-<img src="sheet1.PNG" alt="Beautifully formatted sheet" width="206" />
+<img src="sheet1.PNG" alt="Beautifully formatted sheet"  />
 <p class="caption">
 Figure 1: Beautifully formatted sheet
 </p>
 </div>
 <p>Now look at this sheet. This is what most pivot tables look like, with Province &amp; City as rows, Month as columns, and Sales Quota &amp; Sales Forecast as values. I’ve changed a couple numbers without thinking, so we got some work ahead of us, detecting where they are!</p>
 <div class="figure"><span id="fig:unnamed-chunk-3"></span>
-<img src="sheet2.PNG" alt="Wide-form sheet" width="462" />
+<img src="sheet2.PNG" alt="Wide-form sheet"  />
 <p class="caption">
 Figure 2: Wide-form sheet
 </p>
@@ -425,7 +427,7 @@ joined %&gt;%
   labs(title = &quot;Inconsistency between two files&quot;,
        x = &quot;City&quot;,
        y = &quot;# Mismatches&quot;)</code></pre>
-<p><img src="/post/2020-08-18-cross-checking-two-versions-of-budget-files/index_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
 <p>Q2: Was there a certain month that was forecast or budget wereparticularly wrong?</p>
 <p>A2: Fourth quarter was brutal.</p>
 <pre class="r"><code>theme_set(theme_light())
@@ -440,7 +442,7 @@ joined %&gt;%
   labs(title = &quot;Inconsistency between two files&quot;,
        x = &quot;Months&quot;,
        y = &quot;# Mismatches&quot;)</code></pre>
-<p><img src="/post/2020-08-18-cross-checking-two-versions-of-budget-files/index_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
 </div>
 <div id="conclusion" class="section level2">
 <h2>Conclusion</h2>

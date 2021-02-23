@@ -4,8 +4,11 @@ author: Jiwan Heo
 date: '2020-06-07'
 tags:
   - stats
+thumbnail: "featured.jpg"
+thumbnaildesc: "Photo by @szmigieldesign"
 ---
 
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
 
 
 <blockquote>
@@ -75,7 +78,7 @@ bank_rough</code></pre>
   ggplot(aes(value)) +
   geom_histogram() +
   facet_wrap(~name, scales = &quot;free&quot;)</code></pre>
-<p><img src="/blog/2020-06-07-predict-credit-default-with-random-forest-model-with-tuned-hyperparameters/index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 <p>Interesting to see there’s negative balances, that’s probably gonna be a major predictor.</p>
 <p>For the columns that weren’t selected, I’m going to do the exact same thing as above, but with column charts. This is a trick I learned recently. The powerful <code>reorder_within</code> &amp; <code>scale_y_reordered</code> functions from the <code>tidytext</code> package makes it really easy to get a grasp our data.</p>
 <pre class="r"><code>library(tidytext)
@@ -91,7 +94,7 @@ bank_rough %&gt;%
   theme(legend.position = &quot;none&quot;) +
   facet_wrap(~name, scales = &quot;free&quot;) +
   scale_y_reordered()</code></pre>
-<p><img src="/blog/2020-06-07-predict-credit-default-with-random-forest-model-with-tuned-hyperparameters/index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
 <p>Now that we’ve seen all variables in this dataset, I’m going to take these variables that I think are important.</p>
 <pre class="r"><code>bank_proc &lt;- bank_rough %&gt;% 
   select(id, education, default, housing, job, loan, marital, age, balance)</code></pre>
@@ -120,9 +123,10 @@ bank_test &lt;- testing(bank_split)</code></pre>
   update_role(id, new_role = &quot;id&quot;) %&gt;% 
   step_other(job, threshold = 0.03) %&gt;%
   step_dummy(all_nominal(), -all_outcomes()) %&gt;% 
-  step_downsample(default)
-
-bank_prep &lt;- prep(bank_rec)
+  step_downsample(default)</code></pre>
+<pre><code>## Warning: `step_downsample()` was deprecated in recipes 0.1.13.
+## Please use `themis::step_downsample()` instead.</code></pre>
+<pre class="r"><code>bank_prep &lt;- prep(bank_rec)
 
 juiced &lt;- juice(bank_prep)</code></pre>
 <p>This is what a recipe looks like. It’s just a preprocessing</p>
@@ -139,7 +143,7 @@ juiced &lt;- juice(bank_prep)</code></pre>
 ## Operations:
 ## 
 ## Collapsing factor levels for job
-## Dummy variables from all_nominal, -, all_outcomes()
+## Dummy variables from all_nominal(), -all_outcomes()
 ## Down-sampling based on default</code></pre>
 <p>A recipe needs to be <code>prep</code>’d, which gives us a summary</p>
 <pre class="r"><code>bank_prep</code></pre>
@@ -164,16 +168,16 @@ juiced &lt;- juice(bank_prep)</code></pre>
 <pre><code>## # A tibble: 1,168 x 18
 ##       id   age balance default education_secon~ education_terti~ housing_yes
 ##    &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt; &lt;fct&gt;              &lt;dbl&gt;            &lt;dbl&gt;       &lt;dbl&gt;
-##  1  3242    48    1913 no                     1                0           1
-##  2  9043    48    3458 no                     1                0           0
-##  3 26863    30    1472 no                     1                0           1
-##  4   905    35     267 no                     0                1           1
-##  5 43558    68    7945 no                     0                0           0
-##  6 44162    31    2166 no                     0                1           0
-##  7 27274    31      11 no                     1                0           1
-##  8 20682    58    2609 no                     1                0           0
-##  9  8464    35     412 no                     1                0           1
-## 10 15581    29     -14 no                     0                1           0
+##  1  2023    31     606 no                     0                1           1
+##  2 42980    35    7050 no                     0                1           0
+##  3 28143    43     373 no                     1                0           0
+##  4 14981    37     764 no                     1                0           1
+##  5 21943    45     638 no                     1                0           1
+##  6 13692    42     199 no                     0                1           1
+##  7 10221    37    -119 no                     0                1           1
+##  8   441    34     242 no                     0                1           1
+##  9  2909    42    2535 no                     1                0           1
+## 10  8922    33     934 no                     0                0           1
 ## # ... with 1,158 more rows, and 11 more variables: job_blue.collar &lt;dbl&gt;,
 ## #   job_entrepreneur &lt;dbl&gt;, job_management &lt;dbl&gt;, job_retired &lt;dbl&gt;,
 ## #   job_self.employed &lt;dbl&gt;, job_services &lt;dbl&gt;, job_technician &lt;dbl&gt;,
@@ -204,18 +208,18 @@ juiced &lt;- juice(bank_prep)</code></pre>
   add_model(tune_spec)
 
 tune_wf</code></pre>
-<pre><code>## == Workflow =====================================================================================================
+<pre><code>## == Workflow ====================================================================
 ## Preprocessor: Recipe
 ## Model: rand_forest()
 ## 
-## -- Preprocessor -------------------------------------------------------------------------------------------------
+## -- Preprocessor ----------------------------------------------------------------
 ## 3 Recipe Steps
 ## 
 ## * step_other()
 ## * step_dummy()
 ## * step_downsample()
 ## 
-## -- Model --------------------------------------------------------------------------------------------------------
+## -- Model -----------------------------------------------------------------------
 ## Random Forest Model Specification (classification)
 ## 
 ## Main Arguments:
@@ -235,7 +239,7 @@ bank_folds</code></pre>
 <pre><code>## #  10-fold cross-validation 
 ## # A tibble: 10 x 2
 ##    splits               id    
-##    &lt;named list&gt;         &lt;chr&gt; 
+##    &lt;list&gt;               &lt;chr&gt; 
 ##  1 &lt;split [27.6K/3.1K]&gt; Fold01
 ##  2 &lt;split [27.6K/3.1K]&gt; Fold02
 ##  3 &lt;split [27.6K/3.1K]&gt; Fold03
@@ -260,36 +264,37 @@ tune_res &lt;- tune_grid(
 )</code></pre>
 <p>The result is a dataframe containing each data split we’re using to train, and the metrics.</p>
 <pre class="r"><code>tune_res</code></pre>
-<pre><code>## #  10-fold cross-validation 
+<pre><code>## # Tuning results
+## # 10-fold cross-validation 
 ## # A tibble: 10 x 4
 ##    splits               id     .metrics          .notes          
-##    &lt;named list&gt;         &lt;chr&gt;  &lt;list&gt;            &lt;list&gt;          
-##  1 &lt;split [27.6K/3.1K]&gt; Fold01 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
-##  2 &lt;split [27.6K/3.1K]&gt; Fold02 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
-##  3 &lt;split [27.6K/3.1K]&gt; Fold03 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
-##  4 &lt;split [27.6K/3.1K]&gt; Fold04 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
-##  5 &lt;split [27.6K/3.1K]&gt; Fold05 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
-##  6 &lt;split [27.6K/3.1K]&gt; Fold06 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
-##  7 &lt;split [27.6K/3.1K]&gt; Fold07 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
-##  8 &lt;split [27.6K/3.1K]&gt; Fold08 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
-##  9 &lt;split [27.6K/3.1K]&gt; Fold09 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;
-## 10 &lt;split [27.6K/3.1K]&gt; Fold10 &lt;tibble [40 x 5]&gt; &lt;tibble [0 x 1]&gt;</code></pre>
+##    &lt;list&gt;               &lt;chr&gt;  &lt;list&gt;            &lt;list&gt;          
+##  1 &lt;split [27.6K/3.1K]&gt; Fold01 &lt;tibble [40 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  2 &lt;split [27.6K/3.1K]&gt; Fold02 &lt;tibble [40 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  3 &lt;split [27.6K/3.1K]&gt; Fold03 &lt;tibble [40 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  4 &lt;split [27.6K/3.1K]&gt; Fold04 &lt;tibble [40 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  5 &lt;split [27.6K/3.1K]&gt; Fold05 &lt;tibble [40 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  6 &lt;split [27.6K/3.1K]&gt; Fold06 &lt;tibble [40 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  7 &lt;split [27.6K/3.1K]&gt; Fold07 &lt;tibble [40 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  8 &lt;split [27.6K/3.1K]&gt; Fold08 &lt;tibble [40 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  9 &lt;split [27.6K/3.1K]&gt; Fold09 &lt;tibble [40 x 6]&gt; &lt;tibble [0 x 1]&gt;
+## 10 &lt;split [27.6K/3.1K]&gt; Fold10 &lt;tibble [40 x 6]&gt; &lt;tibble [0 x 1]&gt;</code></pre>
 <p>And we can pull the metrics like so:</p>
 <pre class="r"><code>tune_res %&gt;% 
   collect_metrics()</code></pre>
-<pre><code>## # A tibble: 40 x 7
-##     mtry min_n .metric  .estimator  mean     n std_err
-##    &lt;int&gt; &lt;int&gt; &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt;
-##  1     1     6 accuracy binary     0.752    10 0.00403
-##  2     1     6 roc_auc  binary     0.851    10 0.00726
-##  3     2    39 accuracy binary     0.757    10 0.00300
-##  4     2    39 roc_auc  binary     0.859    10 0.00679
-##  5     3    35 accuracy binary     0.762    10 0.00348
-##  6     3    35 roc_auc  binary     0.862    10 0.00622
-##  7     4    15 accuracy binary     0.766    10 0.00350
-##  8     4    15 roc_auc  binary     0.861    10 0.00611
-##  9     4    17 accuracy binary     0.768    10 0.00340
-## 10     4    17 roc_auc  binary     0.862    10 0.00567
+<pre><code>## # A tibble: 40 x 8
+##     mtry min_n .metric  .estimator  mean     n std_err .config              
+##    &lt;int&gt; &lt;int&gt; &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;                
+##  1     3    35 accuracy binary     0.758    10 0.00397 Preprocessor1_Model01
+##  2     3    35 roc_auc  binary     0.866    10 0.00696 Preprocessor1_Model01
+##  3    12    19 accuracy binary     0.766    10 0.00526 Preprocessor1_Model02
+##  4    12    19 roc_auc  binary     0.869    10 0.00413 Preprocessor1_Model02
+##  5    11    37 accuracy binary     0.765    10 0.00496 Preprocessor1_Model03
+##  6    11    37 roc_auc  binary     0.871    10 0.00514 Preprocessor1_Model03
+##  7    13    20 accuracy binary     0.767    10 0.00466 Preprocessor1_Model04
+##  8    13    20 roc_auc  binary     0.869    10 0.00445 Preprocessor1_Model04
+##  9     6    32 accuracy binary     0.763    10 0.00425 Preprocessor1_Model05
+## 10     6    32 roc_auc  binary     0.870    10 0.00582 Preprocessor1_Model05
 ## # ... with 30 more rows</code></pre>
 <p>Let’s pick the best hyperparameters according to roc_auc.</p>
 <pre class="r"><code>tune_res %&gt;% 
@@ -300,7 +305,7 @@ tune_res &lt;- tune_grid(
   geom_point() + 
   geom_line() +
   facet_wrap(~name)</code></pre>
-<p><img src="/blog/2020-06-07-predict-credit-default-with-random-forest-model-with-tuned-hyperparameters/index_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
 <p>It seems like min_n is the most accurate around 5 &amp; 10, while mtry was around 25, 35. Now that we know a little better, let’s try a bunch of combinations in those ranges to train our model!</p>
 </div>
 <div id="second-tuning" class="section level3">
@@ -336,20 +341,21 @@ regular_res &lt;- tune_grid(
 )
 
 regular_res</code></pre>
-<pre><code>## #  10-fold cross-validation 
+<pre><code>## # Tuning results
+## # 10-fold cross-validation 
 ## # A tibble: 10 x 4
 ##    splits               id     .metrics           .notes          
-##    &lt;named list&gt;         &lt;chr&gt;  &lt;list&gt;             &lt;list&gt;          
-##  1 &lt;split [27.6K/3.1K]&gt; Fold01 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
-##  2 &lt;split [27.6K/3.1K]&gt; Fold02 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
-##  3 &lt;split [27.6K/3.1K]&gt; Fold03 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
-##  4 &lt;split [27.6K/3.1K]&gt; Fold04 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
-##  5 &lt;split [27.6K/3.1K]&gt; Fold05 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
-##  6 &lt;split [27.6K/3.1K]&gt; Fold06 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
-##  7 &lt;split [27.6K/3.1K]&gt; Fold07 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
-##  8 &lt;split [27.6K/3.1K]&gt; Fold08 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
-##  9 &lt;split [27.6K/3.1K]&gt; Fold09 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;
-## 10 &lt;split [27.6K/3.1K]&gt; Fold10 &lt;tibble [200 x 5]&gt; &lt;tibble [0 x 1]&gt;</code></pre>
+##    &lt;list&gt;               &lt;chr&gt;  &lt;list&gt;             &lt;list&gt;          
+##  1 &lt;split [27.6K/3.1K]&gt; Fold01 &lt;tibble [200 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  2 &lt;split [27.6K/3.1K]&gt; Fold02 &lt;tibble [200 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  3 &lt;split [27.6K/3.1K]&gt; Fold03 &lt;tibble [200 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  4 &lt;split [27.6K/3.1K]&gt; Fold04 &lt;tibble [200 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  5 &lt;split [27.6K/3.1K]&gt; Fold05 &lt;tibble [200 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  6 &lt;split [27.6K/3.1K]&gt; Fold06 &lt;tibble [200 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  7 &lt;split [27.6K/3.1K]&gt; Fold07 &lt;tibble [200 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  8 &lt;split [27.6K/3.1K]&gt; Fold08 &lt;tibble [200 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  9 &lt;split [27.6K/3.1K]&gt; Fold09 &lt;tibble [200 x 6]&gt; &lt;tibble [0 x 1]&gt;
+## 10 &lt;split [27.6K/3.1K]&gt; Fold10 &lt;tibble [200 x 6]&gt; &lt;tibble [0 x 1]&gt;</code></pre>
 <p>Let’s take a look at our results. This graph tells you the accuracy of models with specified hyperparameters where each line represents a min_n, and the x-axis represents mtry.</p>
 <pre class="r"><code>regular_res %&gt;% 
   collect_metrics() %&gt;% 
@@ -359,16 +365,16 @@ regular_res</code></pre>
   ggplot(aes(mtry, mean, color = min_n)) +
   geom_point() +
   geom_line(alpha = 0.5, size = 1.5)</code></pre>
-<p><img src="/blog/2020-06-07-predict-credit-default-with-random-forest-model-with-tuned-hyperparameters/index_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
 <p>Seems like min_n of 35, at 8 mtry did the best. However, let’s not guess, there is a function for that!</p>
 <pre class="r"><code>best_auc &lt;- select_best(regular_res, &quot;roc_auc&quot;)
 
 best_auc</code></pre>
-<pre><code>## # A tibble: 1 x 2
-##    mtry min_n
-##   &lt;int&gt; &lt;int&gt;
-## 1     7    30</code></pre>
-<p>7 &amp; 30 it is! Let’s finalize that.</p>
+<pre><code>## # A tibble: 1 x 3
+##    mtry min_n .config               
+##   &lt;int&gt; &lt;int&gt; &lt;chr&gt;                 
+## 1     8    33 Preprocessor1_Model084</code></pre>
+<p>8 &amp; 33 it is! Let’s finalize that.</p>
 <pre class="r"><code>final_rf &lt;- finalize_model(
   tune_spec,
   best_auc
@@ -378,9 +384,9 @@ final_rf</code></pre>
 <pre><code>## Random Forest Model Specification (classification)
 ## 
 ## Main Arguments:
-##   mtry = 7
+##   mtry = 8
 ##   trees = 100
-##   min_n = 30
+##   min_n = 33
 ## 
 ## Computational engine: ranger</code></pre>
 </div>
@@ -401,7 +407,7 @@ final_rf</code></pre>
     data = juice(bank_prep) %&gt;% select(-id)
   ) %&gt;%
   vip(geom = &quot;point&quot;)</code></pre>
-<p><img src="/blog/2020-06-07-predict-credit-default-with-random-forest-model-with-tuned-hyperparameters/index_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
 <p>Obviously, your bank balance and whether you have loans or not will be a good predictor of credit default. All others seem meh though. That’s probably a problem. Maybe this model will be useless when an unseen relationship between bank balance and credit default shows up. But regardless, we’ll go forward.</p>
 <p>We’re doing the exact same thing as above recipe, but with our final model.</p>
 <pre class="r"><code>final_wf &lt;- workflow() %&gt;%
@@ -412,7 +418,8 @@ final_res &lt;- final_wf %&gt;%
   last_fit(bank_split)
 
 final_res</code></pre>
-<pre><code>## # Monte Carlo cross-validation (0.75/0.25) with 1 resamples  
+<pre><code>## # Resampling results
+## # Manual resampling 
 ## # A tibble: 1 x 6
 ##   splits         id          .metrics     .notes      .predictions     .workflow
 ##   &lt;list&gt;         &lt;chr&gt;       &lt;list&gt;       &lt;list&gt;      &lt;list&gt;           &lt;list&gt;   
@@ -420,18 +427,18 @@ final_res</code></pre>
 <p>76% accuracy. I think that’s pretty good.</p>
 <pre class="r"><code>final_res %&gt;% 
   collect_metrics()</code></pre>
-<pre><code>## # A tibble: 2 x 3
-##   .metric  .estimator .estimate
-##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
-## 1 accuracy binary         0.763
-## 2 roc_auc  binary         0.865</code></pre>
+<pre><code>## # A tibble: 2 x 4
+##   .metric  .estimator .estimate .config             
+##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary         0.759 Preprocessor1_Model1
+## 2 roc_auc  binary         0.865 Preprocessor1_Model1</code></pre>
 <p>One last thing to look at is the confusion matrix.</p>
 <pre class="r"><code>final_res %&gt;%  
   collect_predictions() %&gt;% 
   conf_mat(.pred_class, default)</code></pre>
 <pre><code>##           Truth
 ## Prediction   no  yes
-##        no  7638 2393
-##        yes   30  149</code></pre>
+##        no  7599 2432
+##        yes   27  152</code></pre>
 <p>Seems like it did a good job predicting when someone has not defaulted on their loan, but it also said a lot of no’s when in fact the person has defaulted on their loan. (lots of false positives)</p>
 </div>

@@ -6,29 +6,33 @@ tags:
   - NBA
   - Sentiment Analysis
   - tidytext
+thumbnail: "featured.jpg"
+thumbnaildesc: "Photo by @karsten116"
 ---
 
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
 <p>If you’re an NBA fan like me, there’s a good chance you found yourself F5’ing on reddit all summer long for breaking news. While doing so, you probably ran across a couple of ridiculous non-basketball related posts, and I’m here to contribute to just that. It’s been pretty crazy this offseason and lots of players changed teams to either get paid or have a shot at the title. (RIP DeMarcus) That led me to think: “do players actually care as much as we do about the changes in their professional lives?” So I decided to do a sentiment analysis of NBA players 3 weeks before/after signing a deal.</p>
-<a id='SOLNPl_hT6pDFfvfwcM19A' class='gie-single' href='http://www.gettyimages.ca/detail/1031264948' target='_blank' style='color:#a7a7a7;text-decoration:none;font-weight:normal !important;border:none;display:inline-block;'>Embed from Getty Images</a><script>window.gie=window.gie||function(c){(gie.q=gie.q||[]).push(c)};gie(function(){gie.widgets.load({id:'SOLNPl_hT6pDFfvfwcM19A',sig:'BXaLnzFT0BF-sogLKwTFKmaxeEynGlAyTXj-hV31SdI=',w:'594px',h:'396px',items:'1031264948',caption: true ,tld:'ca',is360: false })});</script><script src='//embed-cdn.gettyimages.com/widgets.js' charset='utf-8' async></script>
 <p>In this post, I broke down the twitter accounts of <a href="https://twitter.com/EnesKanter">Enes Kanter</a> and <a href="https://twitter.com/tobias31">Tobias Harris</a>. They are very active on Twitter with completely different personalities, and Kanter went to a new team, while Toby re-signed with the Sixers, which makes them perfect candidates for this analysis. Without further ado, let’s get into this.</p>
 <div id="twitter-activity" class="section level2">
 <h2>Twitter Activity</h2>
 <p>One thing I’ll say before anything: Kanter tweets A LOT. In the 6-week period, he tweeted about 250 tweets, while Toby only had about 80. To match Kanter’s enthusiasm, I also included Toby’s favourited tweets for the analysis.</p>
-<p><img src="kanter_activity.png" width="339" /></p>
+<p><img src="kanter_activity.png" /><!-- --></p>
 <p>Do you see that ya boy Enes tweeted over 80 times on July 13th? That was when <a href="https://twitter.com/robertlabbe0/status/1149877068374708225">he</a> was <a href="https://twitter.com/robertlabbe0/status/1149877068374708225">having</a> a <a href="https://twitter.com/BCaivana7/status/1149827147181301760">good</a> time <a href="https://twitter.com/DuragLuke/status/1149863469975576577">poking</a> fun at <a href="https://twitter.com/dr_steph_dpt/status/1149896865724403712">Kyrie’s</a> #11 <a href="https://twitter.com/ShortGannon/status/1149867649708376066">jersey</a>, which happens to be his new number for the Celtics.</p>
-<p><img src="toby_activity.png" width="339" /></p>
+<p><img src="toby_activity.png" /><!-- --></p>
 <p>Meanwhile, Toby was a little more reserved. (notice the max y-label tick at only 20) The very first peak was when <a href="https://twitter.com/PompeyOnSixers/status/1142111695365713920">his brother got signed to the Sixers’ summer league squad</a>. The third peak is attributed to the end of an era: <a href="https://t.co/ETkAogwyO0">“Toby &amp; Bobi”</a>. And only after 2 weeks of his new $180 million contract, he started <a href="https://t.co/NdmQHIwG3o">re-tweeting about it on July 17</a>. As you can see, his tweeting activities suggest he is a nice humble person who likes to put others before him.</p>
 </div>
 <div id="frequency-of-words" class="section level2">
 <h2>Frequency of words</h2>
 <p>Now that we have a decent idea of both player’s personalities, let’s compare their use of words in their tweets.</p>
-<p><img src="frequency.png" width="339" /></p>
+<p><img src="frequency.png" /><!-- --></p>
 <p>We see a lot of words that lie directly on either axes, meaning the other player did not use that word at all. (i.e. eneskanter, turkish, 76ers, harris tobias) But, generally speaking, I didn’t find anything too interesting, other than the fact the Enes kanter’s use of the word “tobias31” is not 0, meaning he has tweeted at him at least <a href="https://t.co/NDrt2K2caB">once</a> this offseason.</p>
 </div>
 <div id="sentiment-timeline" class="section level2">
 <h2>Sentiment timeline</h2>
 <p>If you’re still reading this, the last thing I’ll do is to look at change in sentiments during this time period. I used a sentiment dictionary to classify every word either positive or negative and tallied up the score for every passing day. Feel free to check out my <a href="https://github.com/jiwanheo/kanter_toby_twitter">github</a> for more detail.</p>
-<p><img src="sentiments.png" width="339" /></p>
+<p><img src="sentiments.png" /><!-- --></p>
 <p>Can you notice the familiar spike in Kanter’s sentiment? It’s the day he trolled Kyrie lol guy must have been ecstatic. On the other hand, Toby must have been down on himself a few days before his contract renewal, right? Not so much. The negative sentiment here is driven by rhetorical motivation quotes like <a href="https://t.co/oS2TRJYqDR">… “Impossible is temporary, impossible is NOTHING.”</a>. So if anything, his sentiment score should have been higher than usual.</p>
 </div>
 <div id="conclusion" class="section level2">
