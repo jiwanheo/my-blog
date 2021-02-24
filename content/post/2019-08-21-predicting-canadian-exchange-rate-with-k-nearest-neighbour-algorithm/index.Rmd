@@ -5,7 +5,7 @@ date: '2019-08-21'
 tags:
   - stats
 thumbnail: "featured.jpg"
-thumbnaildesc: "Photo by @aviosly"
+thumbnailby: "@aviosly"
 ---
 
 ```{r setup, include=FALSE}

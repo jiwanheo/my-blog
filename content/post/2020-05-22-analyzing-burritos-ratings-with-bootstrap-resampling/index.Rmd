@@ -5,7 +5,7 @@ date: '2020-05-22'
 tags:
   - stats
 thumbnail: "featured.jpg"
-thumbnaildesc: "Photo by @creativeheadline"
+thumbnailby: "@creativeheadline"
 ---
 
 You ever had to make a big decision out of a small dataset, and weren't sure if you're making the right call? Maybe you're conducting a survey to see how COVID affected the spending habits of university students vs people in their 40s, and only 10 students responded. Or maybe you're an analyst in a big company, who's trying to make a pricing decision based on past performances, but you only have 3 weeks of data. What these two problems have in common is the lack of sample size and the uncertainty of the decisions that come from it. I, for one, asked myself many times, "K, I did all the analysis correctly, but does this really tell the whole story?" 

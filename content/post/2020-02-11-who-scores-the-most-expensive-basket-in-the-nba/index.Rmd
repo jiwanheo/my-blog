@@ -6,7 +6,7 @@ tags:
   - NBA
   - data processing
 thumbnail: "featured.jpg"
-thumbnaildesc: "Photo by @markusspiske"
+thumbnailby: "@markusspiske"
 ---
 
 Hey! Just a quick post after work. A couple weeks ago, my roommate showed me a tweet that listed soccer players with the most expensive contracts. (I think it was the Premier League?) Of course, I wanted to make something similar with NBA players. I made some quick bar graphs that night showing $ earned per made basket, which was cool, but I wanted to make it a little better. 

@@ -5,7 +5,7 @@ date: '2019-10-12'
 tags:
   - data processing
 thumbnail: "featured.jpg"
-thumbnaildesc: "Photo by @mbaumi"
+thumbnailby: "@mbaumi"
 ---
 
 Hey, this short post is going to go over how to better format your excel sheets for data analytics purposes. If you've ever worked with Excel in your professional/personal life, you've most likely ran into a budget sheet that looks like this.

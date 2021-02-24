@@ -5,7 +5,7 @@ date: '2019-11-02'
 tags:
   - Time series
 thumbnail: "featured.jpg"
-thumbnaildesc: "Photo by @sonjalangford"
+thumbnailby: "@sonjalangford"
 ---
 
 One of the first things I do when I wake up is checking [the weather network](https://www.theweathernetwork.com/ca/weather/ontario/ottawa). If it says it'll be -10 degrees, I'd wear my winter coat, and if it's above 10 degrees, I'd probably go for a light jacket. Now imagine a scenario that the app is consistently incorrect in the winter time by +10 degrees (maybe due to global warming or calculation failure). For the 5th time of the week, you wore your hefty winter coat, only to find out it's really warm outside and now you're sweating like a pig. You start to wonder, "why don't they just lower their prediction by 10 degrees?" This is precisely what autocorrelation is. 

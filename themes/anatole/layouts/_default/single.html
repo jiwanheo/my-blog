@@ -2,7 +2,16 @@
     <div class="post {{ with .Site.Params.doNotLoadAnimations }} . {{ else }} animated fadeInDown {{ end }}">
         <div class="post-content">
             {{ if .Params.thumbnail }}
-            <img class="post-thumbnail" src="{{ .Params.thumbnail | absURL }}" alt="Thumbnail image">
+            <div class="post-thumbnail-container">
+                <div class="post-thumbnail-picture">
+                    <img src="{{ printf "%s%s" .RelPermalink .Params.thumbnail | relURL }}" alt="{{ printf "%s%s%s" "Photo by " .Params.thumbnailby " on Unsplash" }}">
+                </div>
+                <div class="post-thumbnail-desc">
+                    <span class="post-thumbnail-desc">
+                        <a href="{{ printf "%s%s" "https://unsplash.com/" .Params.thumbnailby }}">{{ printf "%s%s%s" "Photo by " .Params.thumbnailby " on Unsplash"}}</a>
+                    </span>
+                </div>
+            </div>
             {{ end }}
             <div class="post-title">
                 <h3>{{ .Title }}</h3>

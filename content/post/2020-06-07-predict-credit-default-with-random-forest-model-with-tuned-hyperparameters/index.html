@@ -5,7 +5,7 @@ date: '2020-06-07'
 tags:
   - stats
 thumbnail: "featured.jpg"
-thumbnaildesc: "Photo by @szmigieldesign"
+thumbnailby: "@szmigieldesign"
 ---
 
 <script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
@@ -430,7 +430,7 @@ final_res</code></pre>
 <pre><code>## # A tibble: 2 x 4
 ##   .metric  .estimator .estimate .config             
 ##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
-## 1 accuracy binary         0.759 Preprocessor1_Model1
+## 1 accuracy binary         0.756 Preprocessor1_Model1
 ## 2 roc_auc  binary         0.865 Preprocessor1_Model1</code></pre>
 <p>One last thing to look at is the confusion matrix.</p>
 <pre class="r"><code>final_res %&gt;%  
@@ -438,7 +438,7 @@ final_res</code></pre>
   conf_mat(.pred_class, default)</code></pre>
 <pre><code>##           Truth
 ## Prediction   no  yes
-##        no  7599 2432
+##        no  7568 2463
 ##        yes   27  152</code></pre>
 <p>Seems like it did a good job predicting when someone has not defaulted on their loan, but it also said a lot of no’s when in fact the person has defaulted on their loan. (lots of false positives)</p>
 </div>

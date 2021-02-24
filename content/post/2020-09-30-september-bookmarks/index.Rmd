@@ -6,7 +6,7 @@ tags:
   - bookmarks
   - webdev
 thumbnail: "featured.jpg"
-thumbnaildesc: "Photo by @impatrickt"
+thumbnailby: "@impatrickt"
 ---
 
 Haven't been coding too much outside work lately. I've been reading this book "Thinking fast and slow" by Daniel Kahneman. Pretty good book so far, but I'm in the slow stretch right now haha! Trying to read at least half an hour everyday, which is like 10 pages for me, and I have 200 pages left, so hopefully I finish the book this month! 

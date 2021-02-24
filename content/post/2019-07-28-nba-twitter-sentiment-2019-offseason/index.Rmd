@@ -7,7 +7,7 @@ tags:
   - Sentiment Analysis
   - tidytext
 thumbnail: "featured.jpg"
-thumbnaildesc: "Photo by @karsten116"
+thumbnailby: "@karsten116"
 ---
 
 If you're an NBA fan like me, there's a good chance you found yourself F5'ing on reddit all summer long for breaking news. While doing so, you probably ran across a couple of ridiculous non-basketball related posts, and I'm here to contribute to just that. It's been pretty crazy this offseason and lots of players changed teams to either get paid or have a shot at the title. (RIP DeMarcus) That led me to think: "do players actually care as much as we do about the changes in their professional lives?" So I decided to do a sentiment analysis of NBA players 3 weeks before/after signing a deal. 

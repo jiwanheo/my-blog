@@ -5,7 +5,7 @@ date: '2020-06-07'
 tags:
   - stats
 thumbnail: "featured.jpg"
-thumbnaildesc: "Photo by @szmigieldesign"
+thumbnailby: "@szmigieldesign"
 ---
 
 > I just want to focus on writing about implementing the workflow of this algorithm in R, so will keep the explanation very brief. However, these are some excellent articles that I referenced on [hyperparameters](https://towardsdatascience.com/understanding-hyperparameters-and-its-optimisation-techniques-f0debba07568), [random forest](https://towardsdatascience.com/understanding-random-forest-58381e0602d2) and [combining them](https://towardsdatascience.com/hyperparameter-tuning-the-random-forest-in-python-using-scikit-learn-28d2aa77dd74).

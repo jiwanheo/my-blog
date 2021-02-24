@@ -5,7 +5,7 @@ date: '2019-10-27'
 tags:
   - Time series
 thumbnail: "featured.jpg"
-thumbnaildesc: "Photo by @sonjalangford"
+thumbnailby: "@sonjalangford"
 ---
 
 I was in a meeting this week with a software company, and came across a machine learning technique that I wasn't too familiar with, _ARIMA_. Instinctively, I wanted to look it up and make a short post about it with an easy example. But it turns out that there was a lot of stuff that I needed to know before even approaching this concept. I despise long posts explaining things, so, I think it's best to split up this whole ARIMA thing into small chunks.

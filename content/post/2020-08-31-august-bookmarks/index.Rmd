@@ -6,7 +6,7 @@ tags:
   - bookmarks
   - webdev
 thumbnail: "featured.jpg"
-thumbdesc: "Photo by @mohammadfathollahi"
+thumbnailby: "@mohammadfathollahi"
 ---
 
 For someone who's learning CSS, I should really start styling this blog.
