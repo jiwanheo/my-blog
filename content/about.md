@@ -8,7 +8,7 @@ I love using `tidyverse` & `tidymodels` to try out new statistical concepts I'd 
 
 When I'm not on my laptop, I like cooking, playing guitar and learning french.
 
-This blog is built with [blogdown](https://github.com/rstudio/blogdown) and [Hugo](https://gohugo.io/), and deployed using [Netlify](https://www.netlify.com/).
+This blog is built with [blogdown](https://github.com/rstudio/blogdown) and [Hugo](https://gohugo.io/) using [Anatole](https://github.com/lxndrblz/anatole) theme, and deployed using [Netlify](https://www.netlify.com/).
 
 ## Skills and Tools
 

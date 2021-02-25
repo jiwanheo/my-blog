@@ -17,7 +17,7 @@
             {{ if .Params.thumbnail }}
             <div class="post-thumbnail">
                 <a href="{{ .RelPermalink }}">
-                <img src="{{ printf "%s%s" .RelPermalink .Params.thumbnail | relURL }}" alt= "{{ printf "%s%s%s" "Photo by " .Params.thumbnailby " on Unsplash" }}" loading="lazy">
+                <img src="{{ printf "%s%s" .RelPermalink .Params.thumbnail | relURL }}" class="post-thumbnail-picture" alt= "{{ printf "%s%s%s" "Photo by " .Params.thumbnailby " on Unsplash" }}" loading="lazy">
                 </a>
             </div>
             {{ end }}
