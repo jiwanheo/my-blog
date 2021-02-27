@@ -15,6 +15,7 @@
     --blockquote-text-color: #858585;
     --blockquote-border-color: #dfe2e5;
     --thumbnail-height: 15em;
+    --anchor-color: #208faf;
     scroll-padding-top: 100px;
 }
 
@@ -105,7 +106,7 @@ a:visited {
 
 a:hover,
 a:active {
-    color: #2660ab;
+    color: var(--anchor-color);
     text-decoration: underline;
 }
 
@@ -214,7 +215,7 @@ a:active {
 }
 
 .page-top .nav a:hover {
-    color: #2660ab;
+    color: var(--anchor-color);
 }
 
 .page-top .nav a.current {
@@ -330,7 +331,7 @@ a:active {
 }
 
 .sidebar .social-links a:hover {
-    color: #2660ab;
+    color: var(--anchor-color);
 }
 
 .post {
@@ -388,7 +389,7 @@ a:active {
 .post .post-content a {
     text-decoration: none;
     letter-spacing: 1px;
-    color: #2660ab;
+    color: var(--anchor-color);
 }
 
 .post .post-content a:hover {
@@ -448,6 +449,14 @@ a:active {
     object-fit: cover;
 }
 
+/* Post Material starts here */
+
+.post .post-content .post-material img {
+    object-fit: cover;
+    max-width: 100%;
+}
+
+
 .post .post-footer {
     padding: 0 0 10px 0;
     border-bottom: 1px solid var(--border-color);
@@ -489,7 +498,7 @@ a:active {
 }
 
 .post .post-footer .meta a:hover {
-    color: #2660ab;
+    color: var(--anchor-color);
 }
 
 .post .post-footer .meta i {
@@ -599,7 +608,7 @@ a:active {
 }
 
 .footer a:hover {
-    color: #2660ab;
+    color: var(--anchor-color);
 }
 
 /*for archive*/
@@ -648,7 +657,7 @@ a:active {
 }
 
 .list-with-title .listing .listing-post a:hover {
-    color: #2660ab;
+    color: var(--anchor-color);
 }
 
 /* share */

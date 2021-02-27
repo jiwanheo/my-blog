@@ -28,12 +28,14 @@
                 {{ end }}
             </div>
 
-            {{ .Content }}
-
-            {{- if (eq .Params.contact true) -}}
-              {{- partial "contact.html" . -}}
-            {{- end -}}
-
+            <div class="post-material">
+                {{ .Content }}
+            
+                {{- if (eq .Params.contact true) -}}
+                  {{- partial "contact.html" . -}}
+                {{- end -}}
+            </div>
+    
         </div>
         <div class="post-footer">
             <div class="info">
