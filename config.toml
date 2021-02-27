@@ -16,6 +16,7 @@ pygmentsCodeFences = true
 pygmentsCodefencesGuessSyntax = true
 
 ignoreFiles = ["\\.ipynb$", ".ipynb_checkpoints$", "\\.Rmd$", "\\.Rmarkdown$", "_cache$"]
+relativeURLS = true
 
 [params]
 title = "Jiwan Heo"
