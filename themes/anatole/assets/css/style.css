@@ -38,12 +38,13 @@ html[data-theme='dark'] {
 html {
     background-color: var(--bg-color);
     -webkit-font-smoothing: antialiased;
+    font-size: 18px;
 }
 
 body {
     color: var(--body-color);
     font-family: 'Verdana', sans-serif;
-    font-size: 15px;
+    font-size: 1rem;
     width: 100%;
     margin: 0 auto 30px auto;
     background-color: var(--bg-color);
@@ -52,7 +53,19 @@ body {
 p {
     line-height: 1.9em;
     font-weight: 400;
-    font-size: 14px;
+    font-size: 1rem;
+}
+
+code {
+    color: #c7254e;
+    background-color: #f9f2f4;
+}
+
+pre code {
+    color: var(--body-color);
+    font-size: .9rem;
+    font-family: monospace;
+    background-color: inherit;
 }
 
 a {
@@ -181,12 +194,12 @@ a:active {
 .content {
     height: auto;
     float: right;
-    width: 60%;
+    width: 70%;
     margin-top: 60px;
 }
 
 .page-top {
-    width: 60%;
+    width: 70%;
     position: fixed;
     right: 0;
     z-index: 3;
@@ -258,7 +271,7 @@ a:active {
 }
 
 .sidebar {
-    width: 40%;
+    width: 30%;
     -webkit-background-size: cover;
     background-size: cover;
     background-color: var(--bg-color);
@@ -339,7 +352,7 @@ a:active {
     margin: 30px;
 }
 
-/* Front page Thumbnail starts here*/
+/* Front page Post aesthetics starts here*/
 
 .post .post-thumbnail img.post-thumbnail-picture {
     width: 100%;
@@ -351,15 +364,15 @@ a:active {
 
 .post .post-title h1 {
     text-transform: uppercase;
-    font-size: 30px;
-    letter-spacing: 5px;
+    font-size: 2rem;
+    letter-spacing: .8px;
     line-height: 1;
 }
 
 .post .post-title h2 {
     text-transform: uppercase;
     letter-spacing: 1px;
-    font-size: 28px;
+    font-size: 1.8rem;
     line-height: 1;
     font-weight: 600;
     color: var(--heading-color);
@@ -372,18 +385,22 @@ a:active {
     font-weight: 600;
     /* color: #464646; */
     color: var(--heading-color);
-    font-size: 22px;
+    font-size: 1.2rem;
     margin: 0;
 }
 
 .post .post-title a {
     text-decoration: none;
-    letter-spacing: 1px;
+    letter-spacing: inherit;
     color: var(--heading-color);
 }
 
 .post .post-title a:hover {
     text-decoration: underline;
+}
+
+.post-summary p {
+    font-size: .75rem;
 }
 
 .post .post-content a {
@@ -398,13 +415,13 @@ a:active {
 }
 
 .post .post-content h3 {
-    font-size: 22px;
+    font-size: 1.1rem;
     font-weight: 600;
 }
 
 .post .post-content h4 {
     /* color: var(--heading-color); */
-    font-size: 16px;
+    font-size: 1rem;
 }
 
 /* in-Post Thumbnail starts here*/
@@ -899,6 +916,10 @@ a.btn {
 
 @media screen and (max-width: 960px),
 print {
+    html {
+        font-size: 16px;
+    }
+    
     .sidebar {
         width: 100%;
         position: absolute;
