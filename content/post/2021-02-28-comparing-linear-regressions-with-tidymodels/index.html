@@ -1,0 +1,399 @@
+---
+title: Comparing Linear Regressions with Tidymodels
+author: Jiwan Heo
+date: '2021-02-28'
+tags:
+  - stats
+thumbnail: featured.jpg
+thumbnailby: '@hofmann_jo'
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<p>Hello! Today, we’re going to predict the costs of various transit projects around the world, by building 3 linear regression models. (simple linear regression, penalized regression, and partial least squares regression) Since we’re working with more than 1 model, we can actually compare the accuracies between different models, and see which might be the most suitable in this particular scenario!</p>
+<p>The inspiration behind this post comes from the book “Applied Predictive Modeling” by RStudio’s <a href="https://twitter.com/topepos?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Eauthor" target="_blank">Max Kuhn</a>. He wrote this book a long time ago to demonstrate predictive modeling with the <code>caret</code> package, a meta machine learning library in R before the <code>tidymodels</code> family. (which he also is a major contributor in) Instead of following the old instructions, I thought it’d be fun to code the same statistical concepts with the great <code>tidymodels</code> package.</p>
+<div id="data-reading-tldr" class="section level1">
+<h1>Data Reading &amp; tldr;</h1>
+<p>This dataset was put together on <a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-01-05/readme.md" target="_blank">January 5th TidyTuesday</a> by <a href="https://transitcosts.com/" target="_blank">the Transit Cost Project</a>, and here’s their abstract behind the dataset:</p>
+<blockquote>
+<p>Why do transit-infrastructure projects in New York cost 20 times more on a per kilometer basis than in Seoul? We investigate this question across hundreds of transit projects from around the world. We have created a database that spans more than 50 countries and totals more than 11,000 km of urban rail built since the late 1990s.</p>
+</blockquote>
+<p>After reading the csv from github, I found the following variables interesting/informative and decided to use them to predict the real cost of transit line projects in millions of USD:</p>
+<ul>
+<li>Start Year</li>
+<li>End Year (therefore, also the duration of the project)</li>
+<li>Country</li>
+<li>Length of the transit line</li>
+<li>Tunnel length, if any</li>
+<li>Number of stations</li>
+</ul>
+<pre class="r"><code>library(tidyverse)
+
+transit_cost &lt;- readr::read_csv(&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-01-05/transit_cost.csv&#39;) %&gt;% 
+  filter(!start_year %in% c(&quot;4 years&quot;, &quot;5 years&quot;, &quot;not start&quot;) &amp; !is.na(start_year)) %&gt;% 
+  filter(!end_year %in% c(&quot;4 years&quot;, &quot;5 years&quot;, &quot;not start&quot;, &quot;X&quot;) &amp; !is.na(end_year)) %&gt;% 
+  mutate(across(c(start_year, end_year, real_cost), ~as.numeric(.))) %&gt;% 
+  select(id = e, start_year, end_year, country, length, tunnel, stations, real_cost) %&gt;% 
+  mutate(duration = end_year - start_year) %&gt;% 
+  mutate(across(c(tunnel, stations), ~ifelse(is.na(.), 0, .)))
+
+transit_cost</code></pre>
+<pre><code>## # A tibble: 462 x 9
+##       id start_year end_year country length tunnel stations real_cost duration
+##    &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;    &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+##  1  7136       2020     2025 CA         5.7    5          6     2377.        5
+##  2  7137       2009     2017 CA         8.6    8.6        6     2592         8
+##  3  7138       2020     2030 CA         7.8    7.8        3     4620        10
+##  4  7139       2020     2030 CA        15.5    8.8       15     7201.       10
+##  5  7144       2020     2030 CA         7.4    7.4        6     4704        10
+##  6  7145       2003     2018 NL         9.7    7.1        8     4030        15
+##  7  7146       2020     2026 CA         5.8    5.8        5     3780         6
+##  8  7147       2009     2016 US         5.1    5.1        2     1756         7
+##  9  7152       2020     2027 US         4.2    4.2        2     3600         7
+## 10  7153       2018     2026 US         4.2    4.2        2     2400         8
+## # ... with 452 more rows</code></pre>
+<p>I’m going to skip the EDA, for the sake of keeping the post length reasonable. Here’s the tldr of this post:</p>
+<p><img src="plot1.png" /><!-- --></p>
+</div>
+<div id="model-building" class="section level1">
+<h1>Model building</h1>
+<p>Let’s build some models! As usual, we’re going to split the data into training/testing sets, as well as bootstrap resampling to tune some hyperparameters later.</p>
+<pre class="r"><code>library(tidymodels)
+
+set.seed(1234)
+transit_initial_split &lt;- initial_split(transit_cost)
+transit_training &lt;- training(transit_initial_split)
+transit_testing &lt;- testing(transit_initial_split)
+
+set.seed(2345)
+transit_boot &lt;- bootstraps(transit_training)</code></pre>
+<div id="simple-linear-regression" class="section level2">
+<h2>Simple Linear Regression</h2>
+<p>Nothing too out of the usual in the <code>recipe</code>. We make the <code>id</code> column an id, so we don’t use it to train the model, normalize all the numeric predictors, <code>step_other</code> the countries, so we only take the countries with the most projects, and classify all as “others”. In our case, I went to the extreme, and selected 1 top country, China, and grouped all else as “others”, and then dummied it.</p>
+<p>I recently learned by trial and error, that any pre-processing <code>steps</code> that involve the response variable, (<code>real_cost</code>) have a good chance of throwing off the testing set. This means I have to explicitly leave out the response, when using calls like <code>all_numeric()</code>.</p>
+<pre class="r"><code>transit_rec &lt;- recipe(real_cost ~ ., data = transit_training) %&gt;% 
+  update_role(id, new_role = &quot;id&quot;) %&gt;% 
+  step_normalize(all_numeric(), -c(id, real_cost)) %&gt;% 
+  step_other(country, threshold = 0.5) %&gt;% 
+  step_dummy(country)</code></pre>
+<p>This pre-processing recipe will remain the same for all three models, that way we can see the differences in predictions due to model specs.</p>
+<p>Next, we define the simple linear regression model specs, which doesn’t have any hyperparameters, so no arguments will be given to the <code>linear_reg</code> call. This will be a little different when we define the penalized model!</p>
+<pre class="r"><code>slr_spec &lt;- linear_reg() %&gt;% 
+  set_mode(&quot;regression&quot;) %&gt;% 
+  set_engine(&quot;lm&quot;)</code></pre>
+<p>Now that we have the pre-processing recipe and a spec, we can train the model, and predict on the testing set! I really like carrying the two around in a <code>workflow</code>, because it’s easy to visualize the process from start to finish.</p>
+<pre class="r"><code>transit_wf &lt;- workflow() %&gt;% 
+  add_recipe(transit_rec) %&gt;% 
+  add_model(slr_spec)
+
+transit_wf</code></pre>
+<pre><code>## == Workflow ====================================================================
+## Preprocessor: Recipe
+## Model: linear_reg()
+## 
+## -- Preprocessor ----------------------------------------------------------------
+## 3 Recipe Steps
+## 
+## * step_normalize()
+## * step_other()
+## * step_dummy()
+## 
+## -- Model -----------------------------------------------------------------------
+## Linear Regression Model Specification (regression)
+## 
+## Computational engine: lm</code></pre>
+<p>Then, the training data is <code>fit</code> to the workflow, meaning it goes through the pre-processing recipe, and the modeling spec. With the trained workflow, we give it the new (testing) data, and <code>predict</code> the outcome, which is saved as <code>slr_pred</code>. Finally, we place the outcomes right next to its original data.</p>
+<pre class="r"><code>slr_pred &lt;- transit_wf %&gt;% 
+  fit(transit_training) %&gt;%
+  predict(transit_testing)
+
+slr_pred %&gt;% 
+  cbind(transit_testing) %&gt;% 
+  head()</code></pre>
+<pre><code>##       .pred   id start_year end_year country length tunnel stations real_cost
+## 1 5084.2688 7139       2020     2030      CA   15.5    8.8       15   7201.32
+## 2 2891.5977 7153       2018     2026      US    4.2    4.2        2   2400.00
+## 3  507.9284 7168       2009     2012      BG    5.1    3.1        4    687.83
+## 4 3890.9995 7170       2008     2012      BG   17.0   15.3       11   3160.64
+## 5 1483.4923 7178       2010     2015      PL    6.5    6.5        7   3286.30
+## 6 1602.6044 7209       2012     2021      IT    1.9    1.9        2    251.55
+##   duration
+## 1       10
+## 2        8
+## 3        3
+## 4        4
+## 5        5
+## 6        9</code></pre>
+<p>Just for simplicity’s sake, we’re going to use R-squared to measure the robustness of the models.</p>
+<pre class="r"><code>slr_rsq &lt;- slr_pred %&gt;% 
+  cbind(transit_testing) %&gt;% 
+  rsq(truth = real_cost, estimate = .pred) %&gt;% 
+  select(.estimate) %&gt;% 
+  mutate(model = &quot;SLR&quot;)
+
+slr_rsq</code></pre>
+<pre><code>## # A tibble: 1 x 2
+##   .estimate model
+##       &lt;dbl&gt; &lt;chr&gt;
+## 1     0.702 SLR</code></pre>
+<p>OK, one down!</p>
+</div>
+<div id="partial-lease-squares-pls" class="section level2">
+<h2>Partial Lease Squares (PLS)</h2>
+<p>Much like PCA (principal component analysis), PLS seeks to reduce the dataset’s dimension by replacing numerous predictors with linear combinations of the predictors that explain the most variance in the predictors. The difference is that in PLS, it simultaneously searches the linear combinations of predictors that also minimizes the outcome.</p>
+<p>While we don’t have a ton of predictors to begin with, this model offers something different from your everyday linear regression models. Since we’re not going to change the <code>recipe</code>, we simply need to define another model spec, and update the <code>workflow</code>. Notice the change in the model. It has one hyper parameter, num_comp, which I’ve arbitrarily set to 3. I could have tuned it to find the optimal number, but wanted to save the hyperparameter tuning until the next section!</p>
+<pre class="r"><code>library(plsmod)
+pls_spec &lt;- pls(num_comp = 3) %&gt;% 
+  set_mode(&quot;regression&quot;) %&gt;% 
+  set_engine(&quot;mixOmics&quot;)
+
+transit_wf &lt;- transit_wf %&gt;% update_model(pls_spec)
+
+transit_wf</code></pre>
+<pre><code>## == Workflow ====================================================================
+## Preprocessor: Recipe
+## Model: pls()
+## 
+## -- Preprocessor ----------------------------------------------------------------
+## 3 Recipe Steps
+## 
+## * step_normalize()
+## * step_other()
+## * step_dummy()
+## 
+## -- Model -----------------------------------------------------------------------
+## PLS Model Specification (regression)
+## 
+## Main Arguments:
+##   num_comp = 3
+## 
+## Computational engine: mixOmics</code></pre>
+<p>And then, we’re just repeating the steps above, of fitting the training set, predicting the testing set, and calculating the R-squared.</p>
+<pre class="r"><code>pls_pred &lt;- transit_wf %&gt;% 
+  fit(transit_training) %&gt;% 
+  predict(transit_testing)
+
+pls_rsq &lt;- pls_pred %&gt;% 
+  cbind(transit_testing) %&gt;% 
+  rsq(truth = real_cost, estimate = .pred) %&gt;% 
+  select(.estimate) %&gt;% 
+  mutate(model = &quot;PLS&quot;)
+
+pls_rsq</code></pre>
+<pre><code>## # A tibble: 1 x 2
+##   .estimate model
+##       &lt;dbl&gt; &lt;chr&gt;
+## 1     0.668 PLS</code></pre>
+<p>That’s it for PLS, pretty short huh? I can’t stress enough how easy it is to swap out different aspects of model building with <code>tidymodels</code>!!!!! Many thanks to all brilliant minds at the tidymodels team :)</p>
+<p>If I really wanted to, I can write a custom function that does the <code>fit</code>, <code>predict</code>, <code>cbind</code>, and <code>rsq</code> all in one. (Or maybe there’s already something out there, I know there’s <code>workflowsets</code> package that I haven’t tried yet)</p>
+</div>
+<div id="penalized-model" class="section level2">
+<h2>Penalized Model</h2>
+<p>The post is getting a little long, but if you’re still reading, you’re probably with me until the end, so buckle in! :)</p>
+<p>I like the penalized regression model because it discourages a simple linear regression from overfitting the training dataset, by introducing artificial penalties. There are two ways of applying the penalties, ridge, and lasso. Evidently, the amount of <code>penalty</code>, as well as the <code>mixture</code> of ridge/lasso are the two “hyperparameters” of the penalized model that you can set to achieve different results. (mixture ranges from 0 to 1, with 1 being lasso, 0 being ridge, and anything inbetween is a combination of the two) Here’s a <a href="https://www.youtube.com/watch?v=Xm2C_gTAl8c&amp;vl=en" target="_blank">good YouTube video</a>.</p>
+<p>We’re going to tune these hyperparameters to optimize the model performance.</p>
+<p>The initial setup is the same.</p>
+<pre class="r"><code>penalized_spec &lt;- linear_reg(mixture = tune(), penalty = tune()) %&gt;%
+  set_mode(&quot;regression&quot;) %&gt;%
+  set_engine(&quot;glmnet&quot;)
+
+transit_wf &lt;- transit_wf %&gt;% update_model(penalized_spec)
+
+transit_wf</code></pre>
+<pre><code>## == Workflow ====================================================================
+## Preprocessor: Recipe
+## Model: linear_reg()
+## 
+## -- Preprocessor ----------------------------------------------------------------
+## 3 Recipe Steps
+## 
+## * step_normalize()
+## * step_other()
+## * step_dummy()
+## 
+## -- Model -----------------------------------------------------------------------
+## Linear Regression Model Specification (regression)
+## 
+## Main Arguments:
+##   penalty = tune()
+##   mixture = tune()
+## 
+## Computational engine: glmnet</code></pre>
+<p><code>penalized_search</code> is just a combination of the two parameters that we can use to train the model. In our case, we have 25 combinations.</p>
+<pre class="r"><code>penalized_search &lt;- grid_regular(parameters(mixture(), penalty()), levels = 5)
+
+penalized_search</code></pre>
+<pre><code>## # A tibble: 25 x 2
+##    mixture      penalty
+##      &lt;dbl&gt;        &lt;dbl&gt;
+##  1    0    0.0000000001
+##  2    0.25 0.0000000001
+##  3    0.5  0.0000000001
+##  4    0.75 0.0000000001
+##  5    1    0.0000000001
+##  6    0    0.0000000316
+##  7    0.25 0.0000000316
+##  8    0.5  0.0000000316
+##  9    0.75 0.0000000316
+## 10    1    0.0000000316
+## # ... with 15 more rows</code></pre>
+<p>Turn on parallel processing to speed up the training, and we use the bootstrap resamples to validate the accuracy. I write about the bootstrap resampling method in <a href="https://jiwanheo.rbind.io/post/2020-05-22-analyzing-burritos-ratings-with-bootstrap-resampling/" target="_blank">this post</a>.</p>
+<p>The tuned results come in a 25-row dataframe, for 25 combinations of hyperparameters, and each has its own train/test split, as well as various metrics for accuracies.</p>
+<pre class="r"><code>doParallel::registerDoParallel()
+penalized_tune &lt;- tune_grid(
+  transit_wf,
+  resamples = transit_boot,
+  grid = penalized_search
+)
+
+penalized_tune</code></pre>
+<pre><code>## # Tuning results
+## # Bootstrap sampling 
+## # A tibble: 25 x 4
+##    splits            id          .metrics          .notes          
+##    &lt;list&gt;            &lt;chr&gt;       &lt;list&gt;            &lt;list&gt;          
+##  1 &lt;split [347/129]&gt; Bootstrap01 &lt;tibble [50 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  2 &lt;split [347/137]&gt; Bootstrap02 &lt;tibble [50 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  3 &lt;split [347/129]&gt; Bootstrap03 &lt;tibble [50 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  4 &lt;split [347/121]&gt; Bootstrap04 &lt;tibble [50 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  5 &lt;split [347/127]&gt; Bootstrap05 &lt;tibble [50 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  6 &lt;split [347/135]&gt; Bootstrap06 &lt;tibble [50 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  7 &lt;split [347/121]&gt; Bootstrap07 &lt;tibble [50 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  8 &lt;split [347/129]&gt; Bootstrap08 &lt;tibble [50 x 6]&gt; &lt;tibble [0 x 1]&gt;
+##  9 &lt;split [347/137]&gt; Bootstrap09 &lt;tibble [50 x 6]&gt; &lt;tibble [0 x 1]&gt;
+## 10 &lt;split [347/133]&gt; Bootstrap10 &lt;tibble [50 x 6]&gt; &lt;tibble [0 x 1]&gt;
+## # ... with 15 more rows</code></pre>
+<p><code>select_best</code> grabs the best metric measured by the given metric, and in our case, I just selected RMSE, root mean squared error.</p>
+<pre class="r"><code>best_rmse &lt;- select_best(penalized_tune, &quot;rmse&quot;)
+
+best_rmse</code></pre>
+<pre><code>## # A tibble: 1 x 3
+##        penalty mixture .config              
+##          &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;                
+## 1 0.0000000001       0 Preprocessor1_Model01</code></pre>
+<p>So the best performing model had minimal penalty, applied using ridge regularization, which means <strong>no variables have been completely removed</strong>, unlike lasso.</p>
+<p>With the best set of hyperparameters, let’s finalize our workflow, and <code>last_fit</code> the training/testing set to the workflow, which <code>fit</code> and <code>predict</code> the training/testing set using the initial split.</p>
+<pre class="r"><code>transit_wf &lt;- finalize_workflow(transit_wf, best_rmse)
+
+penalized_final &lt;- transit_wf %&gt;%
+  last_fit(transit_initial_split)
+
+penalized_final</code></pre>
+<pre><code>## # Resampling results
+## # Manual resampling 
+## # A tibble: 1 x 6
+##   splits        id           .metrics      .notes      .predictions    .workflow
+##   &lt;list&gt;        &lt;chr&gt;        &lt;list&gt;        &lt;list&gt;      &lt;list&gt;          &lt;list&gt;   
+## 1 &lt;split [347/~ train/test ~ &lt;tibble [2 x~ &lt;tibble [0~ &lt;tibble [115 x~ &lt;workflo~</code></pre>
+<p>We can call a couple functions to extract information out of this, such as <code>collect_predictions</code> or <code>collect_metrics</code>.</p>
+<pre class="r"><code>penalized_final %&gt;%
+  collect_predictions()</code></pre>
+<pre><code>## # A tibble: 115 x 5
+##    id               .pred  .row real_cost .config             
+##    &lt;chr&gt;            &lt;dbl&gt; &lt;int&gt;     &lt;dbl&gt; &lt;chr&gt;               
+##  1 train/test split 5236.     4     7201. Preprocessor1_Model1
+##  2 train/test split 2824.    10     2400  Preprocessor1_Model1
+##  3 train/test split  500.    17      688. Preprocessor1_Model1
+##  4 train/test split 3844.    19     3161. Preprocessor1_Model1
+##  5 train/test split 1607.    22     3286. Preprocessor1_Model1
+##  6 train/test split 1638.    36      252. Preprocessor1_Model1
+##  7 train/test split 3482.    40      540. Preprocessor1_Model1
+##  8 train/test split 5489.    41     1656  Preprocessor1_Model1
+##  9 train/test split 1438.    49     1035. Preprocessor1_Model1
+## 10 train/test split 3925.    57     3339  Preprocessor1_Model1
+## # ... with 105 more rows</code></pre>
+<pre class="r"><code>penalized_rsq &lt;- penalized_final %&gt;%
+  collect_metrics() %&gt;%
+  filter(.metric == &quot;rsq&quot;) %&gt;%
+  select(.estimate) %&gt;%
+  mutate(model = &quot;Penalized&quot;)
+
+penalized_rsq</code></pre>
+<pre><code>## # A tibble: 1 x 2
+##   .estimate model    
+##       &lt;dbl&gt; &lt;chr&gt;    
+## 1     0.709 Penalized</code></pre>
+<p>Okay, we made it! We built 3 models and saved their R-squared. How did they perform? Let’s make some viz!</p>
+<p><img src="https://media.giphy.com/media/KB1OqELpIzY18nSa5M/giphy.gif" /></p>
+</div>
+</div>
+<div id="evaluation" class="section level1">
+<h1>Evaluation</h1>
+<p>This plot of R-Squared you’ve seen already at the very beginning. It’s pretty self-explanatory, so I’ll just quickly show you the code.</p>
+<pre class="r"><code>library(scales)
+library(emo)
+library(extrafont)
+theme_set(theme_light())
+
+rsqs &lt;- slr_rsq %&gt;%
+  rbind(pls_rsq) %&gt;%
+  rbind(penalized_rsq) %&gt;%
+  mutate(model = fct_reorder(model, .estimate))</code></pre>
+<pre class="r"><code>plot1 &lt;- ggplot(data = rsqs, aes(model, .estimate)) +
+  geom_col(fill = &quot;#077b88&quot;, alpha = 0.8) +
+  geom_text(aes(model, .estimate / 2, label = model), 
+            family = &quot;OCR A Extended&quot;,
+            size = 20) +
+  geom_text(aes(model, label = paste(&quot;Rsq:&quot;, percent(.estimate))), 
+            family = &quot;OCR A Extended&quot;,
+            size = 10,
+            vjust = 2) +
+  scale_y_continuous(labels = percent_format()) +
+  labs(title = &quot;R-squared values of the three models&quot;,
+       y = &quot;R-squared&quot;) +
+  theme(
+    plot.background = element_rect(fill = &quot;#e2ccc6&quot;),
+    panel.background = element_rect(fill = &quot;#e2ccc6&quot;),
+    
+    panel.grid.major.y = element_line(colour = &quot;#a9a9a9&quot;, size = 1, linetype = &quot;dashed&quot;),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    
+    axis.ticks = element_blank(),
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.title.y = element_text(size = 25, family = &quot;OCR A Extended&quot;),
+    axis.text.y = element_text(size = 25, family = &quot;OCR A Extended&quot;, colour = &quot;black&quot;),
+    
+    plot.title = element_text(family = &quot;OCR A Extended&quot;, size = 43), 
+    plot.margin = unit(c(1.2, 1.2, 1.2, 1.2), &quot;cm&quot;)
+  )</code></pre>
+<p><img src="plot1.png" /><!-- --></p>
+<p>So, the penalized performed best out of the three, although only marginally better than the simple linear regression. Nonetheless, let’s use the penalized model to graph the actual vs predicted plot.</p>
+<pre class="r"><code>plot2 &lt;- penalized_final %&gt;%
+  collect_predictions() %&gt;%
+  ggplot(aes(real_cost, .pred)) +
+  geom_point(alpha = 0.6, size = 3) +
+  geom_abline(color = &quot;red&quot;, linetype = &quot;dashed&quot;, size = 2) +
+  scale_y_continuous(labels = dollar_format()) +
+  scale_x_continuous(labels = dollar_format()) +
+  labs(title = &quot;Predictions on the testing set outcome&quot;,
+       subtitle = &quot;Red line indicates a 100% matching prediction. Any points above the line indicates over-prediction.&quot;,
+       x = &quot;Real Cost (Testing Set Outcome)&quot;,
+       y = &quot;Prediction&quot;) +
+  theme(
+    plot.background = element_rect(fill = &quot;#e2ccc6&quot;),
+    panel.background = element_rect(fill = &quot;#e2ccc6&quot;),
+    
+    panel.grid.major.y = element_line(colour = &quot;#a9a9a9&quot;, size = 1, linetype = &quot;dashed&quot;),
+    panel.grid.major.x = element_line(colour = &quot;#a9a9a9&quot;, size = 1, linetype = &quot;dashed&quot;),
+    
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    
+    axis.ticks = element_blank(),
+    axis.title.x = element_text(size = 15, family = &quot;OCR A Extended&quot;, vjust = -5),
+    axis.text.x = element_text(size = 25, family = &quot;OCR A Extended&quot;, colour = &quot;black&quot;),
+    axis.title.y = element_text(size = 15, family = &quot;OCR A Extended&quot;, vjust = 5, hjust = 0.55),
+    axis.text.y = element_text(size = 25, family = &quot;OCR A Extended&quot;, colour = &quot;black&quot;),
+    
+    plot.title = element_text(family = &quot;OCR A Extended&quot;, size = 43), 
+    plot.subtitle = element_text(family = &quot;OCR A Extended&quot;, size = 15, hjust = 0.01), 
+    plot.margin = unit(c(1.2, 1.2, 1.2, 1.2), &quot;cm&quot;)
+  )</code></pre>
+<p>This plot visualizes if the model exhibits any patterns, for a particular range of the correct “answer”. From what I can tell, there isn’t anything egregiously eye-catching, I’ll even point out that the one observation around $30,000 seems to have been well-predicted.</p>
+<p><img src="plot2.png" /><!-- --></p>
+<p>That’s it! To recap, we used the <code>tidymodels</code> family to build 3 different linear regression models, compared their performance using R-squared. The best model we picked the penalized model, with its hyperparameters tuned to be of minimal ridge penalty.</p>
+<p>See you next time!</p>
+</div>
