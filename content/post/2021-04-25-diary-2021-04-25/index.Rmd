@@ -1,0 +1,29 @@
+---
+title: 'Diary: 2021-04-25'
+author: Jiwan Heo
+date: '2021-04-25'
+tags:
+  - diary
+thumbnail: featured.jpg
+thumbnailby: '@gonchifacello'
+---
+
+Hey,  
+
+I decided to start a dedicated diary section using #diary tag! With the blog posts, I like starting with a quick update on my personal life at the moment. Sometimes, I really want to write a little more than a couple sentences, but stop myself for the sake of keeping the post relevant to the topic. As someone who doesn't take too many pictures of anything, there are periods in my life that I have little recollection of what was going on at the time. So yea, I'm hoping to write regularly here (once a month? maybe more?), and look back at this tag later! 
+
+I don't really have any specific format in mind, but this time, I sat down for a couple hours thinking/reflecting on life, wrote whatever came to mind, __left the desk__, came back, read what I said, and edited.
+
+## Diary
+
+Listening to [the Marias](https://www.youtube.com/watch?v=fTJ0Pvt56aI) right now. I think I found these guys at the beginning of this year, and been in love with them! They hit the sweet spot for me, that nice mix between electronic groove and rock. Other artists I like at the moment: 53 Thieves, Men I Trust, John Mayer, CHVRCHES (throwback to 17-18 y/o me), 새소년 (blog plz render korean), Barrie, Chet Atkins.
+
+I got promoted at work! Since March, I've been the "BI Advisor" at the same team. I still dig into problem solving, but I'm hoping to help facilitate in-depth data analytics collaboration between teams. 
+
+Recently, I started using Twitter to follow data science people and it's a gem! Communities like [R4DS slack channel](https://www.rfordatasci.com/) and [Nick Wan's twitch streams](twitch.tv/nickwan_datasci) are exactly what I needed, because I don't have any real life friends in data science ! If you use R, I highly recommend hopping on slack! I'm in 2 weekly book clubs right now (advanced R & tidy modeling with R), and hoping to join another one soon! (Practical Statistics for Data Scientists) These not only keep your learning on track, but also help you work on presentation skills! :D
+
+Speaking of Twitter, I've been doing the #TidyTuesday, where a bunch of people make cool visualizations using the weekly data by [r4ds](https://github.com/rfordatascience/tidytuesday). I love the works from [Georgios Karamanis](https://twitter.com/geokaramanis) and [Alexandra Bagaïni](https://twitter.com/a_bagaini). Also, I don't participate in this one but #30DayChartChallenge is really fun too! 
+
+On a tad serious note, I do feel some lockdown/covid stress recently, the April lockdown really brings me down. I'm not cooking as much new things as I used to, and appetite is low. I'm around 145lbs nowadays. Really miss hanging out with friends after work at the Royal Oak, and kickboxing with training partners. I do my best to stay positive & active with running and bodyweight exercises, but it's been really tough to stay motivated. 
+
+Kinda want to get a dog, am i responsible enough? we'll see
