@@ -1,0 +1,54 @@
+---
+title: Using purrr:map to add jitter to ggplot arts
+author: Jiwan Heo
+date: '2021-05-13'
+tags:
+  - LetsBeArtistic
+thumbnail: featured.jpg
+thumbnailby: '@wildhoney'
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<p>What’s up everyone, double post for me today 💪💪💪</p>
+<p>I just read Ch.9, <a href="https://adv-r.hadley.nz/functionals.html">“Functionals”</a> of Advanced R, which talks about functional programming syntaxes like <code>purrr::map</code>. I’ve always <em>kinda</em> known how to use <code>map</code>, but for the most part, didn’t use too much. I just so happened to be interested in generative art right now, so geometry and stuff. Which, is a fantastic application for <code>purrr:map</code>!</p>
+<p>Here’s a circle:</p>
+<pre class="r"><code>library(tidyverse)
+theme_set(theme_light())
+
+npoints &lt;- 10000
+
+df &lt;- tibble(
+  id = 1:npoints,
+  x = cos(2*pi/npoints * id),
+  y = sin(2*pi/npoints * id)
+)
+
+df %&gt;% 
+  ggplot(aes(x, y)) + 
+  geom_point() +
+  coord_equal()</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p>So just a 10000 row tibble. We use the row number to divide 2pi, and plot x,y of a circle.</p>
+<p>Now, if we wanted to draw a random number from a uniform distribution per row, we can do:</p>
+<pre class="r"><code>set.seed(9)
+
+df &lt;- df %&gt;% 
+  mutate(x = map_dbl(x, ~ .x + runif(n = 1, min = -0.2, max = 0.2)),
+         y = map_dbl(y, ~ .x + runif(n = 1, min = -0.2, max = 0.2)),
+         l = map_dbl(y, ~ runif(n = 1, min = 0, max = 1)))
+
+df %&gt;% 
+  ggplot(aes(x, y, color = l)) + 
+  geom_point(alpha = 0.1) +
+  coord_equal() +
+  theme_void() +
+  scale_color_gradient2(low = &quot;#F71735&quot;, high = &quot;#41EAD4&quot;, midpoint = 0.5) +
+  theme(
+    plot.background = element_rect(fill = &quot;#000000&quot;),
+    legend.position = &quot;none&quot;
+  )</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>This was possible because the formula was executed at every item inside the list (a column)</p>
+<p><code>purrr</code> magic at it again, so much to learn!</p>
