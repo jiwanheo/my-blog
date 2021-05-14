@@ -1,0 +1,28 @@
+---
+title: April/May 2021 Bookmarks
+author: Jiwan Heo
+date: '2021-05-13'
+tags:
+  - bookmarks
+thumbnail: featured.jpg
+thumbnailby: '@davehoefler'
+---
+
+Hiya, here's a bunch of bookmarks I've been collecting.
+
+- [A whole course on gen art??? But cest french](https://github.com/v3ga/Cours_Bordeaux_Montaigne/tree/master/L2_2020_2021)
+- [Cool viz that I should do](https://blog.datawrapper.de/stacked-bar-chart-art/)
+- [Cool generative art blog](https://generativeartistry.com/tutorials/)
+- [Another cool gen. art blog](https://tholman.com/)
+- [Book on Typography](https://practicaltypography.com/)
+- [Cairo has a podcast](https://anchor.fm/ddjpodcast)
+- [Magick masking](https://www.ddrive.no/post/miracles-with-magick-and-bunny/)
+- [Magick colour extracting](https://www.rostrum.blog/2018/11/25/art-of-the-possible/)
+- [Book on forecasting](https://otexts.com/fpp3/)
+- [Resources on bayesian](https://github.com/rmcelreath/statrethinking_winter2019)
+- [French keyboards](https://superuser.com/questions/743920/how-to-type-french-specific-characters-on-a-standard-us-keyboard-on-windows-usin)
+- [Ottawa doggos](https://www.kiwisphotography.com/blog/2021/2/15/guide-to-ottawa-dog-rescues)
+- [Brag your documentation](https://jvns.ca/blog/brag-documents/)
+- [Colour Palettes](https://github.com/EmilHvitfeldt/r-color-palettes/blob/master/README.md#comprehensive-list-of-color-palettes-in-r)
+- [Tufte Style Blog](http://motioninsocial.com/tufte/)
+- [Cédric Scherer's ggplot guide](https://www.cedricscherer.com/2019/08/05/a-ggplot2-tutorial-for-beautiful-plotting-in-r/)
