@@ -1,0 +1,324 @@
+---
+title: How to draw Truchet tiles with ggplot2
+author: Jiwan Heo
+date: '2021-05-23'
+tags:
+  - LetsBeArtistic
+thumbnail: featured.jpg
+thumbnailby: 'Me!'
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<p>Hey there!</p>
+<p>Hope you’re having a fantastic day! It’s long weekend here in Canada, and using the extra day off, I revisited and solved a problem that I was stuck in for a while. It was about the Truchet tiles.</p>
+<p>{{% tweet "1394508535917170690" %}}</p>
+<p>After spending a lot more time than I’d like to admit, I eventually found the problem was in rounding differences when comparing whole numbers 💩💩💩 Which was kinda strange, but I got around it by increasing the rounding digits.</p>
+<p>Nonetheless, this is what I came up with:
+<img src="featured.jpg" width="50%" style="display: block; margin: auto;" /></p>
+<p>Or, un-<code>patchwork</code>’d:</p>
+<p><img src="num_div1.png" width="50%" style="display: block; margin: auto;" /></p>
+<p><img src="num_div2.png" width="50%" style="display: block; margin: auto;" /></p>
+<p><img src="num_div3.png" width="50%" style="display: block; margin: auto;" /></p>
+<p>I found many useful resources like <a href="https://www.youtube.com/watch?v=2R7h76GoIJM&amp;t=340s">this</a> or <a href="https://www.youtube.com/watch?v=4gdfs89hSxg">this</a>, but never ran into a full-on R tutorial, so here we go 💪💪💪</p>
+<p>The code is <a href="https://github.com/jiwanheo/my-aRt/blob/master/truchet-tiles/draw_multi_line_truchet.R">here</a>. The above plots were created with varying <code>nrow</code>, <code>ncol</code> &amp; <code>num_div</code> values.</p>
+<div id="quick-intro-on-truchet" class="section level1">
+<h1>Quick Intro on Truchet</h1>
+<p><a href="https://en.wikipedia.org/wiki/S%C3%A9bastien_Truchet">Sébastien Truchet</a> was a French priest under the reign of Louis XIV.</p>
+<p><img src="https://upload.wikimedia.org/wikipedia/commons/8/80/Sebastien_truchet.jpg" /></p>
+<p>Don’t be fooled by his mischievous looks, because he has a really impressive resume! For starters, he invented a typographic system called <em>Romain du Roi</em>, which eventually became the <em>Times New Roman</em> font of today. As a side hustle, he built most of the canals in France, and while doing so, spent his free time arranging tiles to make #Rtistry. And one day, he discovered an interesting pattern.</p>
+<p>The Truchet pattern is made by covering a surface area using 4 square tiles.</p>
+<p><img src="https://upload.wikimedia.org/wikipedia/commons/d/d9/Truchet_base_tiles_bordered.png" /></p>
+<p>You can stack them with a scheme:</p>
+<p><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Truchet_ordered_tiling.svg/562px-Truchet_ordered_tiling.svg.png" /></p>
+<p>Or without:</p>
+<p><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Truchet_base_tiling.svg/500px-Truchet_base_tiling.svg.png" /></p>
+<p>If we take out the colours, and just draw the diagonal lines, we get a maze:</p>
+<p><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Truchet_labyrinth.png/250px-Truchet_labyrinth.png" /></p>
+<p>(sorry, the shapes don’t exactly line up, but you get the idea)</p>
+<p>This type of maze is what I focused in this post, partly because I’m not good at polygons in ggplot lol</p>
+<p>Let’s get into it!</p>
+</div>
+<div id="how-to-make-the-maze" class="section level1">
+<h1>How to make the maze</h1>
+<pre class="r"><code>library(tidyverse)
+theme_set(theme_light())</code></pre>
+<p>This is what we start with. A rectangular x/y and xend/yend of +1, to be able to draw diagonal lines with <code>geom_segment</code>.</p>
+<pre class="r"><code>df &lt;- crossing(x = 1:10, y = 1:10) %&gt;% 
+  mutate(xend = x+1,
+         yend = y+1)
+
+df</code></pre>
+<pre><code>## # A tibble: 100 x 4
+##        x     y  xend  yend
+##    &lt;int&gt; &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1     1     1     2     2
+##  2     1     2     2     3
+##  3     1     3     2     4
+##  4     1     4     2     5
+##  5     1     5     2     6
+##  6     1     6     2     7
+##  7     1     7     2     8
+##  8     1     8     2     9
+##  9     1     9     2    10
+## 10     1    10     2    11
+## # ... with 90 more rows</code></pre>
+<pre class="r"><code>df %&gt;% 
+  ggplot() +
+  geom_point(aes(x, y)) +
+  geom_segment(aes(x=x, y=y, xend=xend, yend=yend)) +
+  coord_equal()</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p>Now, we give all those lines a <code>flip</code> probability, and if below 0.5, flip the x &amp; xend.</p>
+<p>Let’s demonstrate this on the first row.</p>
+<pre class="r"><code>df %&gt;% 
+  mutate(flip = map_dbl(y, ~ifelse(.x == 1, 0.2, 0.8))) %&gt;% 
+  mutate(x    = pmap_dbl(list(flip, x),    ~ifelse(.x&lt;0.5, .y, .y+1)),
+         xend = pmap_dbl(list(flip, xend), ~ifelse(.x&lt;0.5, .y, .y-1))) %&gt;% 
+  ggplot() +
+  geom_point(aes(x, y)) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_equal()</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p>If we mix it up, we get something interesting.</p>
+<pre class="r"><code>df &lt;- df %&gt;% 
+  mutate(flip = map_dbl(x, ~runif(n = 1, min = 0, max = 1))) %&gt;% 
+  mutate(x    = pmap_dbl(list(flip, x),    ~ifelse(.x&lt;0.5, .y, .y+1)),
+         xend = pmap_dbl(list(flip, xend), ~ifelse(.x&lt;0.5, .y, .y-1))) </code></pre>
+<pre class="r"><code>df %&gt;% 
+  ggplot() +
+  geom_point(aes(x, y)) +
+  geom_segment(aes(x=x, y=y, xend=xend, yend=yend)) +
+  coord_equal()</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p>There’s our maze! You can play around with the flip chance, the degree of movement when flipped, or the size of the grid to make something more interesting.</p>
+<p>That’s the baseline Truchet pattern. Using what we just learend, things start to get a lot more interesting if we draw more than 1 line per tile, like so:</p>
+<p><img src="example1.PNG" width="256" /></p>
+</div>
+<div id="how-to-make-the-multiline-truchet" class="section level1">
+<h1>How to make the multiline Truchet</h1>
+<blockquote>
+<p>We’ll put together a function, <code>draw_multi_line_truchet</code>, that takes the dimension of a grid, and number of lines in each tile, to draw a pattern.</p>
+</blockquote>
+<p>First, we divide the width &amp; height of a tile into n equal pieces. (i.e. above, width &amp; height were divided into 4 equal parts, using 3 helper points)</p>
+<p>This is called <a href="https://en.wikipedia.org/wiki/Linear_interpolation#:~:text=In%20mathematics%2C%20linear%20interpolation%20is,set%20of%20known%20data%20points.">linear interpolation</a>. Taking the 1st tile (bottom-left corner at x=1, y=1) as an example, the two sides to be interpolated are:</p>
+<ul>
+<li>width: between (1,1) &lt;-&gt; (2,1)</li>
+<li>height: between (1,1) &lt;-&gt; (1,2)</li>
+</ul>
+<p>We start with the same setup as before (rectangular grid), and add the <code>lerp</code> function, which is short for linear interpolation. And a <code>divide_square</code> function, which calls <code>lerp</code> twice on a given tile, to interpolate its x-axis and y-axis.</p>
+<p>When calling <code>lerp</code> twice in <code>divide_square</code>, notice the slightly different x/y coordinates that represent the origin &amp; destination points of linear interpolation. The output is a df of 2*<code>num_div</code> rows. Each row is a diagonal line inside a tile.</p>
+<p>Then we repeat this for all of the tiles. <code>purrr::pmap_dfr</code> to the rescue!! I strategically lined up the argument order in <code>divide_square</code> to match the column names in df so I don’t have to explicitly saying them lol (start_x in lerp &lt;-&gt; xloc in divide_square &lt;-&gt; x in df)</p>
+<pre class="r"><code>draw_multi_line_truchet &lt;- function(nrow, ncol = nrow, num_div){
+  
+  #setup
+  df &lt;- crossing(x = 1:ncol, y = 1:nrow) %&gt;% 
+    mutate(flip = map_dbl(x, ~runif(1,0,1))) #draw a number btw 0~1
+  
+  #interpolate a line
+  lerp &lt;- function(start_x, start_y, end_x, end_y, nlines, flip) {
+    dat &lt;- tibble(id = 1:(nlines+1)) %&gt;%
+      mutate(d = id / (nlines+1),
+             x = (1-d)*start_x + d*end_x,
+             y = (1-d)*start_y + d*end_y) %&gt;% 
+      filter(d != 1) %&gt;%
+      mutate(xend = x + (1-d),
+             yend = y + (1-d))
+    return(dat)
+  }
+  
+  #call lerp twice, for x &amp; y axis
+  divide_square &lt;- function(xloc, yloc, flip_chance, nlines = num_div) {
+    bind_rows(
+      lerp(xloc, yloc, xloc+1, yloc, nlines, flip_chance), # interpolate x axis
+      lerp(xloc, yloc, xloc, yloc+1, nlines, flip_chance) # interpolate y axis
+    ) 
+  }
+  
+  #call lerp twice on all rows
+  df &lt;- df %&gt;% 
+    pmap_dfr(divide_square)
+  
+  return(df)
+}</code></pre>
+<p>Let’s use a 5x5 grid, and we want to interpolate a tile 3 times per side.</p>
+<pre class="r"><code>test &lt;- draw_multi_line_truchet(ncol = 5, nrow = 5, num_div = 3)
+
+test</code></pre>
+<pre><code>## # A tibble: 150 x 6
+##       id     d     x     y  xend  yend
+##    &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1     1  0.25  1.25  1     2     1.75
+##  2     2  0.5   1.5   1     2     1.5 
+##  3     3  0.75  1.75  1     2     1.25
+##  4     1  0.25  1     1.25  1.75  2   
+##  5     2  0.5   1     1.5   1.5   2   
+##  6     3  0.75  1     1.75  1.25  2   
+##  7     1  0.25  1.25  2     2     2.75
+##  8     2  0.5   1.5   2     2     2.5 
+##  9     3  0.75  1.75  2     2     2.25
+## 10     1  0.25  1     2.25  1.75  3   
+## # ... with 140 more rows</code></pre>
+<pre class="r"><code>test %&gt;% 
+  ggplot() +
+  geom_point(aes(x = x, y = y)) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_equal()</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<p>Awesome 💪 Explaining code is always tough, but hope you’re following!</p>
+<p>Now, I want to rotate a tile 90 degrees counter-clockwise randomly. The <code>lerp</code> function gets a little crazy.</p>
+<p>Based on the value of “flip”, we re-define the x, y, xend &amp; yend coords of a segment. I also wanted to make sure the same lines of codes work as intended when <code>lerp</code>’ing x-axis and y-axis.</p>
+<p>I ended up doing a ton of “Is this a y-axis transformation? Then do this calc. If not, do the other one”. This is done 4 times, for the 4 coordinates at where I commented #3.</p>
+<blockquote>
+<p>If there were more dimensions/scenarios, I’d have a tough time scaling up</p>
+</blockquote>
+<pre class="r"><code>draw_multi_line_truchet &lt;- function(nrow, ncol = nrow, num_div){
+  
+  #1. setup (df is used to call everything in step #5)
+  df &lt;- crossing(x = 1:ncol, y = 1:nrow) %&gt;% 
+    mutate(flip = map_dbl(x, ~runif(1,0,1))) #draw a number btw 0~1
+  
+  lerp &lt;- function(start_x, start_y, end_x, end_y, nlines, flip) {
+    #2. interpolate a line
+    dat &lt;- tibble(id = 1:(nlines+1)) %&gt;%
+      mutate(d = id / (nlines+1),
+             x = (1-d)*start_x + d*end_x,
+             y = (1-d)*start_y + d*end_y) %&gt;% 
+      filter(d != 1) %&gt;%
+      mutate(xend = x + (1-d),
+             yend = y + (1-d))
+    
+    #3. flip for fun
+    if(flip&lt;0.5) {
+      dat &lt;- dat %&gt;% 
+        mutate(
+          #if true, it&#39;s the y axis (left) we&#39;re rotating to the x-axis (bottom) if not, bottom to right
+          xnew    = imap_dbl(id, ~ifelse(dat[[.y, &quot;x&quot;]] == start_x, start_x + 1-dat[[.y, &quot;d&quot;]], start_x + 1)),
+          ynew    = imap_dbl(id, ~ifelse(dat[[.y, &quot;y&quot;]] == start_y, start_y + dat[[.y, &quot;d&quot;]],   start_y)),
+          # The strange comparison error. Got around by rounding up.
+          xendnew = imap_dbl(
+            id, ~ifelse(
+              round(dat[[.y, &quot;xend&quot;]], digits = 2) != round(start_x+1, digits = 2),
+              start_x,
+              start_x + dat[[.y, &quot;d&quot;]]
+            )
+          ),
+          yendnew = imap_dbl(
+            id, ~ifelse(
+              round(dat[[.y, &quot;yend&quot;]], digits = 2) == round(start_y+1, digits = 2),
+              start_y + 1-dat[[.y, &quot;d&quot;]],
+              start_y+1
+            )
+          )
+        )
+    }
+    return(dat)
+  }
+  #4. call lerp twice, for x &amp; y axis 
+  divide_square &lt;- function(xloc, yloc, flip_chance, nlines = num_div) {
+    bind_rows(
+      lerp(xloc, yloc, xloc+1, yloc, nlines, flip_chance), # interpolate x axis
+      lerp(xloc, yloc, xloc, yloc+1, nlines, flip_chance) # interpolate y axis
+    ) 
+  }
+  
+  #5. call lerp twice on all rows (i guess this and #4 should technically be #1, 2, but yea)
+  df &lt;- df %&gt;% 
+    pmap_dfr(divide_square)
+  
+  return(df)
+}</code></pre>
+<p>For example, when flipped, the new x position, <code>xnew</code> transformation,</p>
+<pre class="r"><code>xnew = imap_dbl(id, ~ifelse(dat[[.y, &quot;x&quot;]] == start_x, start_x + 1-dat[[.y, &quot;d&quot;]], start_x + 1))</code></pre>
+<p>What I’m really doing is to iterate over an arbitrary column of our grid using <code>purrr:imap_dbl</code>, and using its index number to grab items in other columns from it</p>
+<p>Let’s break down that ifelse.</p>
+<p><strong>1. Condition</strong></p>
+<pre class="r"><code>dat[[.y, &quot;x&quot;]] == start_x</code></pre>
+<p>if the current row’s x value is the same as <code>start_x</code>, (x of bottom left corner of a tile), this means the line that current row draws, starts from the left border, and ends at the bottom border. And the transformed line needs to start at the bottom border and end at the right border.</p>
+<p><strong>2. TRUE</strong></p>
+<pre class="r"><code>#true result 
+start_x + 1-dat[[.y, &quot;d&quot;]]</code></pre>
+<p>We’re rotating the left border to the bottom. From start_x, we add the distance between the current interpolated point, and the end point, on the y-axis (pre-flip).</p>
+<p><strong>3. FALSE</strong></p>
+<pre class="r"><code>#false result
+start_x + 1</code></pre>
+<p>We’re rotating the bottom border to the right-side. They all have same x coords. Note that the point (1.25,1) gets rotated to (2,1.25)</p>
+<p>To put it all together, the movement in the bottom row is what we’re trying to achieve.</p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-21-1.png" width="672" /></p>
+<p>Now, let <code>runif</code> decide which tiles to flip in the setup,</p>
+<pre class="r"><code>draw_multi_line_truchet &lt;- function(nrow, ncol = nrow, num_div){
+  
+  #setup
+  df &lt;- crossing(x = 1:ncol, y = 1:nrow) %&gt;% 
+    mutate(flip = map_dbl(x, ~runif(1,0,1))) #draw a number btw 0~1
+  
+  #interpolate a line
+  lerp &lt;- function(start_x, start_y, end_x, end_y, nlines, flip) {
+    dat &lt;- tibble(id = 1:(nlines+1)) %&gt;%
+      mutate(d = id / (nlines+1),
+             x = (1-d)*start_x + d*end_x,
+             y = (1-d)*start_y + d*end_y) %&gt;% 
+      filter(d != 1) %&gt;%
+      mutate(xend = x + (1-d),
+             yend = y + (1-d))
+    
+    if(flip&lt;0.5) {
+      #Rounding was necessary to nail down the points for some reason
+      
+      dat &lt;- dat %&gt;% 
+        mutate(
+          #if true, it&#39;s the left axis we&#39;re rotating to bottom. if not, bottom to right
+          x    = imap_dbl(id, ~ifelse(dat[[.y, &quot;x&quot;]] == start_x, start_x + 1-dat[[.y, &quot;d&quot;]], start_x + 1)),
+          y    = imap_dbl(id, ~ifelse(dat[[.y, &quot;y&quot;]] == start_y, start_y + dat[[.y, &quot;d&quot;]],   start_y)),
+          xend = imap_dbl(
+            id, ~ifelse(
+              round(dat[[.y, &quot;xend&quot;]], digits = 2) != round(start_x+1, digits = 2),
+              start_x,
+              start_x + dat[[.y, &quot;d&quot;]]
+            )
+          ),
+          yend = imap_dbl(
+            id, ~ifelse(
+              round(dat[[.y, &quot;yend&quot;]], digits = 2) == round(start_y+1, digits = 2),
+              start_y + 1-dat[[.y, &quot;d&quot;]],
+              start_y+1
+            )
+          )
+        )
+    }
+    return(dat)
+  }
+  #call lerp twice, for x &amp; y axis
+  divide_square &lt;- function(xloc, yloc, flip_chance, nlines = num_div) {
+    bind_rows(
+      lerp(xloc, yloc, xloc+1, yloc, nlines, flip_chance), # interpolate x axis
+      lerp(xloc, yloc, xloc, yloc+1, nlines, flip_chance) # interpolate y axis
+    ) 
+  }
+  
+  #call lerp twice on all rows
+  df &lt;- df %&gt;% 
+    pmap_dfr(divide_square)
+  
+  return(df)
+}
+
+test &lt;- draw_multi_line_truchet(ncol = 5, nrow = 5, num_div = 3) 
+
+test %&gt;% 
+  ggplot() +
+  geom_point(aes(x = x, y = y)) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_equal()</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<p>That’s the core idea behind this neat pattern!</p>
+<p>After getting this down, I added some geom_curves, with alternating “curvature”, with the exact same x, y, xend, yend. Finally, throw in some pretty colours, and Voilà!</p>
+</div>
+<div id="after-thoughts" class="section level1">
+<h1>After thoughts</h1>
+<p>Hope you learned something, this was a super fun challenge for me, and I really got to practice some <code>purrr</code> functions. We recently covered this package in our advanced R book club, so I’m very happy to find a use case!</p>
+<p>I love plotting in R. It’s still a little awkward to wrap my mind around, since I have to set up the complete dataframe, and then plot. But the good thing is that it’s pushing my data wrangling skills, in areas that I didn’t really know existed!</p>
+<p>Not sure what I want to look into next. I can dig more into tiling (penrose looks interesting) or voronoi looks cool too.</p>
+<p>I should change the css of the code chunks to colour comments differently.</p>
+</div>
