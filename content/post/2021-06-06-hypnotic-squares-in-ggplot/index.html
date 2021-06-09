@@ -1,0 +1,729 @@
+---
+title: Hypnotic Squares in ggplot!
+author: Jiwan Heo
+date: '2021-06-06'
+tags:
+  - LetsBeArtistic
+thumbnail: featured.jpg
+thumbnailby: '@Cest Moi'
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<p>Heya, hope you’re doing well!</p>
+<p>The other day, I read an interesting blog post from <a href="https://generativeartistry.com/tutorials/hypnotic-squares/">generative artistry</a>, which walks you through how to make this art piece:</p>
+<p><img src="https://generativeartistry.com/img/07-hypnotic-squares.png" width="50%" style="display: block; margin: auto;" />
+I love their work, because they do a really good job explaining what they were thinking at the time of building their art. It can be really challenging to precisely explain/document your thought processes (especially in a blog setting, you typically want to sequentially build up to the final result), so kudos to them!</p>
+<p>While working on this, I was really surprised by the lack of history on this particular style of art! I feel like I’ve definitely seen this pattern before, but other than the blog above, which cited <a href="http://dada.compart-bremen.de/item/agent/644">William Kolomyjec</a> as the creator, I wasn’t able to gather too too much information.</p>
+<p>But yes. I just had to recreate this in ggplot! lol Let’s gooooo 🔥🔥🔥🔥🔥🔥</p>
+<p>I did my best to breathe some life into this stuff, and here’s what I came up with at the end:</p>
+<p><img src="featured.jpg" width="50%" style="display: block; margin: auto;" /></p>
+<p>Here’s my code: <a href="https://github.com/jiwanheo/my-aRt/blob/master/hypnotic-squares/hypnotic-squares.R" class="uri">https://github.com/jiwanheo/my-aRt/blob/master/hypnotic-squares/hypnotic-squares.R</a></p>
+<p>And here’s an attempt to explain my illegible code!</p>
+<div id="core-idea" class="section level1">
+<h1>Core Idea</h1>
+<p>The core idea is pretty simple.</p>
+<ul>
+<li>Define a grid</li>
+<li>Draw some rectangles inwards, n times. (They never touch each other)</li>
+<li>Draw one final square (or not) of any size, that fits in the remaining space.</li>
+<li>Crowd all squares to a certain direction. It can cover any distance between its original position, and the 1 square before.</li>
+</ul>
+<p>Right off the bat, you’ll notice:</p>
+<ul>
+<li>There’s less squares being drawn towards the bottom</li>
+<li>Some squares are “empty” in the middle</li>
+<li>The inner-most square has a lot more movement than the others.</li>
+</ul>
+<p>This is because:</p>
+<ul>
+<li>The number of squares drawn inwards is sampled from 1:y_position_of_the_square</li>
+<li>Only 1 square was drawn (the outer most square of a 1x1 square), or the inward squares had little space to work with before they stopped, leaving a big space in the middle</li>
+<li>The final square is drawn separately from the rest of the squares, and is not bound by the same scale as the second previous squares</li>
+</ul>
+</div>
+<div id="dive-in-to-the-code" class="section level1">
+<h1>Dive in to the code</h1>
+<p>I still suck at explaining my codes, so it’ll probably help if you have the source code open on the side, and referencing parts of this blog!</p>
+<p>One thing I unfortunately couldn’t get to work, was experienting with skew-normal distributions with the <code>sn</code> package. I wanted to introduce a different type of randomness, but unfortunately for now, it’ll have to be uniform distribution. We’ll get em next time 😭</p>
+<p>There’s three functions:</p>
+<ul>
+<li><code>calc_hyp</code> creates the x/y data for a single iteration of a square</li>
+<li><code>prepare_df</code> calls the above a bunch of times, to create a grid with unique squares (different params)</li>
+<li><code>plot_n_save</code> is a util function to plot everything</li>
+</ul>
+<p>The order I’m going to walk you through is:</p>
+<ol style="list-style-type: decimal">
+<li>Plot a single “tile” with inwards squares</li>
+<li>Make a bunch of tiles</li>
+<li>Spice it up a little</li>
+</ol>
+<div id="plot-a-single-tile-with-inwards-squares" class="section level2">
+<h2>1. Plot a single “tile” with inwards squares</h2>
+<p>Let’s start with 1 square. Here, I define a square with 2 pairs of min/max, and a seed for later.</p>
+<pre class="r"><code>library(tidyverse) # i&#39;d probably be homeless without yall folks </code></pre>
+<pre class="r"><code>calc_hyp  &lt;- function(start_x, start_y, my_seed = 9999) {
+  set.seed(my_seed)
+  
+  df &lt;- tibble(
+    xmin = start_x,
+    xmax = start_x + 1,
+    ymin = start_y,
+    ymax = start_y + 1
+  ) %&gt;% 
+    mutate(id = row_number())
+  df
+}
+
+calc_hyp(1, 1)</code></pre>
+<pre><code>## # A tibble: 1 x 5
+##    xmin  xmax  ymin  ymax    id
+##   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt;
+## 1     1     2     1     2     1</code></pre>
+<p>We can shuffle these around to define x/y coords of four vertices of a polygon. It’s a little cheeky, but here’s how I did it:</p>
+<pre class="r"><code>format_df &lt;- function(df) {
+  df %&gt;% select(
+    id,
+    x1 = xmax, x2 = xmin, x3 = xmin, x4 = xmax, 
+    y1 = ymin, y2 = ymin, y3 = ymax, y4 = ymax  
+  ) %&gt;% 
+    pivot_longer(cols = -id) %&gt;%
+    mutate(loc = str_extract(name, &quot;^.&quot;))  %&gt;%
+    pivot_wider(id_cols = id, names_from = loc, values_from = value, values_fn = list) %&gt;%
+    unnest(cols = c(x, y))
+}
+
+one_square &lt;- calc_hyp(1, 1) %&gt;% format_df()
+one_square</code></pre>
+<pre><code>## # A tibble: 4 x 3
+##      id     x     y
+##   &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt;
+## 1     1     2     1
+## 2     1     1     1
+## 3     1     1     2
+## 4     1     2     2</code></pre>
+<p>format_df is a quick function that formats our results into a geom_polygon format. It’ll eventually live in the calc_hyp function.</p>
+<pre class="r"><code>ggplot() +
+  geom_polygon(data = one_square,
+               aes(x = x, y = y, group = factor(id)),
+               color = &quot;#000000&quot;, fill = NA) +
+  coord_equal()</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p>If you’re good with colours, definitely remove that fill = NA argument. I just left it transparent.</p>
+<p>Now that we’re good with 1 square, it’s time to draw inwards.</p>
+<pre class="r"><code>calc_hyp  &lt;- function(start_x, start_y, n_dup, my_seed = 9999) {
+  set.seed(my_seed)
+  
+  df &lt;- tibble(
+    xmin = start_x,
+    xmax = start_x + 1,
+    ymin = start_y,
+    ymax = start_y + 1
+  )
+  
+  step = 0.1
+  
+  df &lt;- map_dfr(1:n_dup, ~df) %&gt;% 
+    mutate(id = row_number()) %&gt;%
+    mutate(
+      xmin    = accumulate(xmin, ~.x + step),
+      xmax    = accumulate(xmax, ~.x - step),
+      ymin    = accumulate(ymin, ~.x + step),
+      ymax    = accumulate(ymax, ~.x - step)
+    ) 
+  
+   df
+}
+
+format_df &lt;- function(df) {
+  df %&gt;% 
+    select(
+      id,
+      x1 = xmax, x2 = xmin, x3 = xmin, x4 = xmax, 
+      y1 = ymin, y2 = ymin, y3 = ymax, y4 = ymax  
+    ) %&gt;% 
+    pivot_longer(cols = -id) %&gt;%
+    mutate(loc = str_extract(name, &quot;^.&quot;))  %&gt;%
+    pivot_wider(id_cols = id, names_from = loc, values_from = value, values_fn = list) %&gt;%
+    unnest(cols = c(x, y)) %&gt;% 
+    mutate(
+      tile_start_point = paste(x, y, sep = &quot;_&quot;), #unique per position on grid
+      tile_id = paste(tile_start_point, id, sep = &quot;_&quot;) #unique per every square
+    )
+}
+
+calc_hyp(1, 1, n_dup = 3)</code></pre>
+<pre><code>## # A tibble: 3 x 5
+##    xmin  xmax  ymin  ymax    id
+##   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt;
+## 1   1     2     1     2       1
+## 2   1.1   1.9   1.1   1.9     2
+## 3   1.2   1.8   1.2   1.8     3</code></pre>
+<p>In calc_hyp, I duplicate the initial square <code>n_dup</code> times using <code>purrr::map_dfr</code>, and increase/decrease coordinates by 0.1, from their previous values. <code>purrr::accumulate</code> is super handy for this.</p>
+<p>Also, notice the change in <code>format_df</code>. I now give each square an id.</p>
+<p>Here’s a tile with 3 squares:</p>
+<pre class="r"><code>calc_hyp(1, 1, n_dup = 3) %&gt;% 
+  format_df() %&gt;% 
+  ggplot() +
+  geom_polygon(aes(x = x, y = y, group = factor(id)),
+               color = &quot;#000000&quot;, fill = NA) +
+  coord_equal()</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p>Finally, let’s add the “final square” that’s has a lot more freedoms than the other squares</p>
+<pre class="r"><code>calc_hyp  &lt;- function(start_x, start_y, n_dup, use_fin_square, fin_square_width, my_seed = 9999) {
+  set.seed(my_seed)
+  
+  df &lt;- tibble(
+    xmin = start_x,
+    xmax = start_x + 1,
+    ymin = start_y,
+    ymax = start_y + 1
+  )
+  
+  step = 0.1
+  
+  df &lt;- map_dfr(1:n_dup, ~df) %&gt;% 
+    mutate(id = row_number()) %&gt;%
+    mutate(
+      xmin    = accumulate(xmin, ~.x + step),
+      xmax    = accumulate(xmax, ~.x - step),
+      ymin    = accumulate(ymin, ~.x + step),
+      ymax    = accumulate(ymax, ~.x - step)
+    ) 
+  
+  if(use_fin_square) {
+    
+    final_square &lt;- tibble(
+      id     = nrow(df) + 1,
+      xmin   = start_x + 0.5 - fin_square_width,
+      xmax   = start_x + 0.5 + fin_square_width,
+      ymin   = start_y + 0.5 - fin_square_width,
+      ymax   = start_y + 0.5 + fin_square_width
+    )
+    
+    df &lt;- df %&gt;% 
+      rbind(final_square) 
+  }
+  output_formatted &lt;- df  %&gt;%
+    select(
+      id,
+      x1 = xmax, x2 = xmin, x3 = xmin, x4 = xmax, 
+      y1 = ymin, y2 = ymin, y3 = ymax, y4 = ymax  
+    ) %&gt;% 
+    pivot_longer(cols = -id) %&gt;%
+    mutate(loc = str_extract(name, &quot;^.&quot;))  %&gt;%
+    pivot_wider(id_cols = id, names_from = loc, values_from = value, values_fn = list) %&gt;%
+    unnest(cols = c(x, y)) %&gt;% 
+    mutate(
+      tile_start_point = paste(start_x, start_y, sep = &quot;_&quot;), 
+      tile_id = paste(tile_start_point, id, sep = &quot;_&quot;)
+    )
+  
+  output_formatted
+}</code></pre>
+<p>Now, we have the ability to turn on/off the last square (if statement), and to set its width. I use this width to make 1 half of the square. So the “width” I speak, really is half the length of a side of a square. It takes as values greater than 0 and less than 0.5.</p>
+<p>Also, I put the <code>format_df</code> function inside calc_hyp now. This is to produce a unique id per dimension of the grid.</p>
+<p>Now, to test what we got so far,</p>
+<pre class="r"><code>calc_hyp(1, 1, n_dup = 3, use_fin_square = TRUE, fin_square_width = 0.05)  %&gt;% 
+  ggplot() +
+  geom_polygon(aes(x = x, y = y, group = factor(id)),
+               color = &quot;#000000&quot;, fill = NA) +
+  coord_equal()</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p>Ok! This is as far as we’re going to go with an individual square for now. Let’s make a bunch of them!</p>
+</div>
+<div id="make-a-bunch-of-tiles" class="section level2">
+<h2>2. Make a bunch of tiles</h2>
+<p>To make a bunch of tiles, we’re going to write <code>prepare_df</code>, which makes a dataframe that contains each argument to <code>calc_hyp</code> nicely organized as columns, so that 1 row is 1 unique call to the function. This function creates a dataframe, that is cols x rows long, and has predefined <code>n_dup</code>, <code>fin_square_width</code> &amp; <code>use_fin_square</code> values. Then, we call <code>calc_hyp</code> on each row, using <code>pmap_dfr</code>.</p>
+<pre class="r"><code>prepare_df &lt;- function(rows, cols, my_seed = 9999) {
+  set.seed(my_seed)
+  
+  df &lt;- crossing(start_x = 1:cols, start_y = 1:rows) %&gt;%
+    mutate(
+      id               = row_number(),
+      n_dup            = 3,
+      fin_square_width = 0.05,
+      use_fin_square   = TRUE,
+    ) %&gt;%
+    mutate(my_seed = my_seed) %&gt;% 
+    select(-id)
+  
+  df %&gt;%
+    pmap_dfr(calc_hyp)
+}</code></pre>
+<p>By <code>crossing</code> the two vectors, we get a nice 5x5 grid of starting points.</p>
+<pre class="r"><code>prepare_df(rows = 5, cols = 5)</code></pre>
+<pre><code>## # A tibble: 400 x 5
+##       id     x     y tile_start_point tile_id
+##    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;            &lt;chr&gt;  
+##  1     1   2     1   1_1              1_1_1  
+##  2     1   1     1   1_1              1_1_1  
+##  3     1   1     2   1_1              1_1_1  
+##  4     1   2     2   1_1              1_1_1  
+##  5     2   1.9   1.1 1_1              1_1_2  
+##  6     2   1.1   1.1 1_1              1_1_2  
+##  7     2   1.1   1.9 1_1              1_1_2  
+##  8     2   1.9   1.9 1_1              1_1_2  
+##  9     3   1.8   1.2 1_1              1_1_3  
+## 10     3   1.2   1.2 1_1              1_1_3  
+## # ... with 390 more rows</code></pre>
+<p>Now, we have a grid!</p>
+<pre class="r"><code>prepare_df(rows = 5, cols = 5) %&gt;% 
+  ggplot() +
+  geom_polygon(aes(x = x, y = y, group = factor(tile_id)),
+               color = &quot;#000000&quot;, fill = NA) +
+  coord_equal()</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<p>In fact, let’s turn the plotting action into a function as well with some colours.</p>
+<pre class="r"><code>plot_n_save &lt;- function(my_seed, rows = 5, cols = 5){
+  set.seed(my_seed)
+  
+  output &lt;- prepare_df(
+    rows = rows,
+    cols = cols,
+    my_seed = my_seed
+  )
+  
+  p &lt;- ggplot() +
+    geom_polygon(data = output,
+                 aes(x = x, y = y, group = tile_id),
+                 fill = NA,
+                 color = &quot;#e3a407&quot;)
+    
+  p_formatted &lt;- p +
+    coord_equal() +
+    theme_void() +
+    theme(
+      legend.position = &quot;none&quot;,
+      plot.background = element_rect(fill = &quot;#537c74&quot;, color = &quot;#537c74&quot;)
+    )
+  
+  p_formatted
+}</code></pre>
+<p>So in this util function, we call <code>prepare_df</code> to get some 5x5 hypnotic squares coordinates with a seed, and do some ggplot work. (in my source code, this function saves the plot as well, hence the name)</p>
+<pre class="r"><code>plot_n_save(my_seed = 68)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<p>And just like that, we can now make as many squares as we want!</p>
+</div>
+<div id="spice-it-up-a-little" class="section level2">
+<h2>3. Spice it up a little</h2>
+<p>Ok here’s the tough part: breathing some life into this stuff.</p>
+<p>Let’s take a quick pause to remind ourselves what our goal looks like:</p>
+<p><img src="featured.jpg" width="50%" style="display: block; margin: auto;" /></p>
+<p>I’m going to do these things:</p>
+<ol style="list-style-type: decimal">
+<li>More n_dup at the top then the bottom.</li>
+<li>Tilt/crowd the squares to a certain direction. (I guess it’s subtle, now that I’m writing about it after a couple days)</li>
+<li>Control how much space the initial round of square generation can take up, before the final_square is plotted.</li>
+<li>Turn off final_square every now and then.</li>
+</ol>
+<div id="more-n_dup-at-the-top-then-the-bottom" class="section level3">
+<h3>3.1 More n_dup at the top then the bottom</h3>
+<p>This is pretty simple, we just match the n_dup with the y position.</p>
+<p>This is done in <code>prepare_df</code>:</p>
+<pre class="r"><code>prepare_df &lt;- function(rows, cols, my_seed = 9999) {
+  set.seed(my_seed)
+  
+  df &lt;- crossing(start_x = 1:cols, start_y = 1:rows) %&gt;%
+    mutate(
+      id               = row_number(),
+      n_dup            = start_y, 
+      fin_square_width = 0.05,
+      use_fin_square   = TRUE,
+    ) %&gt;%
+    mutate(my_seed = my_seed) %&gt;% 
+    select(-id)
+  
+  df %&gt;%
+    pmap_dfr(calc_hyp)
+}</code></pre>
+<pre class="r"><code>plot_n_save(my_seed = 68)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
+<p>What if we sampled any number between the y position and 1?</p>
+<pre class="r"><code>prepare_df &lt;- function(rows, cols, my_seed = 9999) {
+  set.seed(my_seed)
+  
+  df &lt;- crossing(start_x = 1:cols, start_y = 1:rows) %&gt;%
+    mutate(
+      id               = row_number(),
+      n_dup            = map_dbl(start_y, ~ifelse(.x == 1, 1, sample(1:.x, 1))), 
+      fin_square_width = 0.05,
+      use_fin_square   = TRUE,
+    ) %&gt;%
+    mutate(my_seed = my_seed) %&gt;% 
+    select(-id)
+  
+  df %&gt;%
+    pmap_dfr(calc_hyp)
+}</code></pre>
+<pre class="r"><code>plot_n_save(my_seed = 68)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
+<p>Kewl</p>
+</div>
+<div id="tiltcrowd-the-squares" class="section level3">
+<h3>3.2 Tilt/crowd the squares</h3>
+<p>I modified <code>calc_hyp</code> to move the existing coordinates in one of 9 directions using up/down/left/right or stay. (Think of the number pad on keyboards)</p>
+<pre class="r"><code>calc_hyp  &lt;- function(start_x, start_y, n_dup, use_fin_square, fin_square_width, xtilt = 0, ytilt = 0, my_seed = 9999) {
+  set.seed(my_seed)
+  
+  df &lt;- tibble(
+    xmin = start_x,
+    xmax = start_x + 1,
+    ymin = start_y,
+    ymax = start_y + 1
+  )
+  
+  step = 0.1
+  
+  df &lt;- map_dfr(1:n_dup, ~df) %&gt;% 
+    mutate(id = row_number()) %&gt;%
+    mutate(
+      xmin    = accumulate(xmin, ~.x + step),
+      xmax    = accumulate(xmax, ~.x - step),
+      ymin    = accumulate(ymin, ~.x + step),
+      ymax    = accumulate(ymax, ~.x - step)
+    ) 
+  
+  if(use_fin_square) {
+    
+    final_square &lt;- tibble(
+      id     = nrow(df) + 1,
+      xmin   = start_x + 0.5 - fin_square_width,
+      xmax   = start_x + 0.5 + fin_square_width,
+      ymin   = start_y + 0.5 - fin_square_width,
+      ymax   = start_y + 0.5 + fin_square_width
+    )
+    
+    df &lt;- df %&gt;% 
+      rbind(final_square) 
+  }
+  
+  crowding &lt;- function(dat, measure, item, index, tilt) {
+    
+    if(index == 1) item
+    else{
+      movement &lt;- abs(dat[[index-1, measure]] - item) %&gt;%
+        `*`(runif(n = 1, min = 0.01, max = 0.99)) #yes, i just piped a multiplication
+      
+      movement &lt;- movement * tilt
+      item - movement
+    }           
+  }
+  
+  # Apply Crowding
+  res &lt;- df %&gt;%
+    mutate(
+      xmin = imap_dbl(xmin, ~crowding(dat = df, measure = &quot;xmin&quot;, item = .x, index = .y, tilt = xtilt)),
+      xmax = imap_dbl(xmax, ~crowding(df, &quot;xmax&quot;, .x, .y, xtilt)),
+      ymin = imap_dbl(ymin, ~crowding(df, &quot;ymin&quot;, .x, .y, ytilt)),
+      ymax = imap_dbl(ymax, ~crowding(df, &quot;ymax&quot;, .x, .y, ytilt))
+    )
+  
+  output_formatted &lt;- res  %&gt;%
+    select(
+      id,
+      x1 = xmax, x2 = xmin, x3 = xmin, x4 = xmax, 
+      y1 = ymin, y2 = ymin, y3 = ymax, y4 = ymax  
+    ) %&gt;% 
+    pivot_longer(cols = -id) %&gt;%
+    mutate(loc = str_extract(name, &quot;^.&quot;))  %&gt;%
+    pivot_wider(id_cols = id, names_from = loc, values_from = value, values_fn = list) %&gt;%
+    unnest(cols = c(x, y)) %&gt;% 
+    mutate(
+      tile_start_point = paste(start_x, start_y, sep = &quot;_&quot;), 
+      tile_id = paste(tile_start_point, id, sep = &quot;_&quot;) 
+    )
+  
+  output_formatted
+}</code></pre>
+<p>We added 2 new arguments, xtilt, and ytilt. They can be one of -1, 0, 1.</p>
+<p><code>crowding</code> function inside <code>calc_hyp</code>, takes a dataframe containing xmin/xmax/ymin/ymax, and move those coords closer to/further from the one plotted right before it. The total available distance for movement is the delta of the values between current and previous rows.</p>
+<p>For example, take this df for instance</p>
+<pre class="r"><code>## # A tibble: 3 x 5
+##    xmin  xmax  ymin  ymax    id
+##   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt;
+## 1   1     2     1     2       1
+## 2   1.1   1.9   1.1   1.9     2
+## 3   1.2   1.8   1.2   1.8     3</code></pre>
+<p>The xmin of row 2, has 1.1 - 1 = 0.1 distance between it and the one prior. This is the total available distance for movement for xmin at this iteration. <code>crowding</code> takes a random percentage (btw 1% and 99%) of this distance, and add/subtract to its original xmin value of 1.1 (The add/subtract is done by multiplying it by xtilt or ytilt argument, which is one of -1, 0, 1)</p>
+<p>Now we add the xtilt and ytilt in <code>prepare_df</code> to call it. I’m just going to randomly sample them. I’m using the same rules for x coords and y coords, so that if xmin is a decrease, then xmax is a decrease as well, but you can play around with it.</p>
+<pre class="r"><code>prepare_df &lt;- function(rows, cols, my_seed = 9999) {
+  set.seed(my_seed)
+  
+  df &lt;- crossing(start_x = 1:cols, start_y = 1:rows) %&gt;%
+    mutate(
+      id               = row_number(),
+      n_dup            = map_dbl(start_y, ~ifelse(.x == 1, 1, sample(1:.x, 1))), 
+      fin_square_width = 0.05,
+      use_fin_square   = TRUE,
+      xtilt = map_dbl(id, ~sample(c(-1, 0, 1), 1)),
+      ytilt = map_dbl(id, ~sample(c(-1, 0, 1), 1))
+    ) %&gt;%
+    mutate(my_seed = my_seed) %&gt;% 
+    select(-id)
+  
+  df %&gt;%
+    pmap_dfr(calc_hyp)
+}</code></pre>
+<pre class="r"><code>plot_n_save(my_seed = 68)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
+<p>Ok, so far so good! When I’m working on generative things like this, I get so eager to get to the point where I can start experimenting with randomness! And We’ve definitely hit that point now~</p>
+<p>However, it can get out of control super quickly if you’re not careful. So what I like to do (especially in tiles), is to annotate the arguments that decide how the outcome looks like, and trying to find the sweet spot.</p>
+<pre class="r"><code>calc_hyp  &lt;- function(start_x, start_y, n_dup, use_fin_square, fin_square_width, xtilt = 0, ytilt = 0, my_seed = 9999) {
+  set.seed(my_seed)
+  
+  df &lt;- tibble(
+    xmin = start_x,
+    xmax = start_x + 1,
+    ymin = start_y,
+    ymax = start_y + 1
+  )
+  
+  step = 0.1
+  
+  df &lt;- map_dfr(1:n_dup, ~df) %&gt;% 
+    mutate(id = row_number()) %&gt;%
+    mutate(
+      xmin    = accumulate(xmin, ~.x + step),
+      xmax    = accumulate(xmax, ~.x - step),
+      ymin    = accumulate(ymin, ~.x + step),
+      ymax    = accumulate(ymax, ~.x - step)
+    ) 
+  
+  if(use_fin_square) {
+    
+    final_square &lt;- tibble(
+      id     = nrow(df) + 1,
+      xmin   = start_x + 0.5 - fin_square_width,
+      xmax   = start_x + 0.5 + fin_square_width,
+      ymin   = start_y + 0.5 - fin_square_width,
+      ymax   = start_y + 0.5 + fin_square_width
+    )
+    
+    df &lt;- df %&gt;% 
+      rbind(final_square) 
+  }
+  
+  crowding &lt;- function(dat, measure, item, index, tilt) {
+    
+    if(index == 1) item
+    else{
+      movement &lt;- abs(dat[[index-1, measure]] - item) %&gt;%
+        `*`(runif(n = 1, min = 0.01, max = 0.99)) 
+      
+      movement &lt;- movement * tilt
+      item - movement
+    }           
+  }
+  
+  # Apply Crowding
+  res &lt;- df %&gt;%
+    mutate(
+      xmin = imap_dbl(xmin, ~crowding(dat = df, measure = &quot;xmin&quot;, item = .x, index = .y, tilt = xtilt)),
+      xmax = imap_dbl(xmax, ~crowding(df, &quot;xmax&quot;, .x, .y, xtilt)),
+      ymin = imap_dbl(ymin, ~crowding(df, &quot;ymin&quot;, .x, .y, ytilt)),
+      ymax = imap_dbl(ymax, ~crowding(df, &quot;ymax&quot;, .x, .y, ytilt))
+    )
+  
+  output_formatted &lt;- res  %&gt;%
+    select(
+      id,
+      x1 = xmax, x2 = xmin, x3 = xmin, x4 = xmax, 
+      y1 = ymin, y2 = ymin, y3 = ymax, y4 = ymax  
+    ) %&gt;% 
+    pivot_longer(cols = -id) %&gt;%
+    mutate(loc = str_extract(name, &quot;^.&quot;))  %&gt;%
+    pivot_wider(id_cols = id, names_from = loc, values_from = value, values_fn = list) %&gt;%
+    unnest(cols = c(x, y)) %&gt;% 
+    mutate(
+      tile_start_point = paste(start_x, start_y, sep = &quot;_&quot;), 
+      tile_id = paste(tile_start_point, id, sep = &quot;_&quot;) 
+    ) %&gt;% 
+    mutate( 
+      params = paste0( #Just put together helper columns that I can use later to make a label.
+        &quot;n_dup: &quot;, n_dup, &quot;\n&quot;,
+        &quot;use_fin_square: &quot;, use_fin_square, &quot;\n&quot;,
+        &quot;fin_square_width: &quot;, round(fin_square_width, digits = 2), &quot;\n&quot;,
+        &quot;xtilt: &quot;, xtilt, &quot;\n&quot;,
+        &quot;ytilt: &quot;, ytilt 
+      ) 
+    )
+  
+  output_formatted
+}</code></pre>
+<pre class="r"><code>plot_n_save &lt;- function(my_seed, rows = 5, cols = 5){
+  set.seed(my_seed)
+  
+  output &lt;- prepare_df(
+    rows = rows,
+    cols = cols,
+    my_seed = my_seed
+  )
+  
+  to_label &lt;- output %&gt;%
+    group_by(tile_start_point) %&gt;% # 1 unique set of parameters per tile
+    summarize(x = mean(x), y = mean(y), params = params) %&gt;%
+    ungroup()
+  
+  p &lt;- ggplot() +
+    geom_polygon(data = output,
+                 aes(x = x, y = y, group = tile_id),
+                 fill = NA,
+                 color = &quot;#e3a407&quot;) +
+    geom_text(data = to_label, # Call it here
+              aes(x = x, y = y, label = params),
+              color = &quot;#EBEBEB&quot;)
+    
+  p_formatted &lt;- p +
+    coord_equal() +
+    theme_void() +
+    theme(
+      legend.position = &quot;none&quot;,
+      plot.background = element_rect(fill = &quot;#537c74&quot;, color = &quot;#537c74&quot;)
+    )
+  
+  p_formatted
+}</code></pre>
+<pre class="r"><code>plot_n_save(my_seed = 68)</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;tile_start_point&#39;. You can override using the `.groups` argument.</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-27-1.png" width="672" /></p>
+<p>Ran out of space, but you catch my drift lol, I’m going to reverse these, but hide the code.</p>
+</div>
+</div>
+<div id="control-how-much-space-the-initial-round-of-square-generation-can-take-up-before-the-final_square-is-plotted." class="section level2">
+<h2>3.3 Control how much space the initial round of square generation can take up, before the final_square is plotted.</h2>
+<p>We’re going to introduce a new argument “stop_squares_at”, to <code>calc_hyp</code>. Remember when I treated the “width” of a square as just the half of the length? I’m gonna do the same thing here, but this actually defines an area that no other squares can be drawn on.</p>
+<p>We’re going to use this to calculate the even increments that the many squares in tiles should decrease by, to fit n_dup of them, inside the limited space. We previously did this by a static amount of 0.1, but we’ll make it <code>stop_squares_at</code> / <code>n_dup</code></p>
+<pre class="r"><code>calc_hyp  &lt;- function(start_x, start_y, n_dup, stop_squares_at, use_fin_square, fin_square_width, xtilt = 0, ytilt = 0, my_seed = 9999) {
+  set.seed(my_seed)
+  
+  df &lt;- tibble(
+    xmin = start_x,
+    xmax = start_x + 1,
+    ymin = start_y,
+    ymax = start_y + 1
+  )
+  
+  step &lt;- stop_squares_at / n_dup 
+  
+  df &lt;- map_dfr(1:n_dup, ~df) %&gt;% 
+    mutate(id = row_number()) %&gt;%
+    mutate(
+      xmin    = accumulate(xmin, ~.x + step),
+      xmax    = accumulate(xmax, ~.x - step),
+      ymin    = accumulate(ymin, ~.x + step),
+      ymax    = accumulate(ymax, ~.x - step)
+    ) 
+  
+  if(use_fin_square) {
+    
+    final_square &lt;- tibble(
+      id     = nrow(df) + 1,
+      xmin   = start_x + 0.5 - fin_square_width,
+      xmax   = start_x + 0.5 + fin_square_width,
+      ymin   = start_y + 0.5 - fin_square_width,
+      ymax   = start_y + 0.5 + fin_square_width
+    )
+    
+    df &lt;- df %&gt;% 
+      rbind(final_square) 
+  }
+  
+  crowding &lt;- function(dat, measure, item, index, tilt) {
+    
+    if(index == 1) item
+    else{
+      movement &lt;- abs(dat[[index-1, measure]] - item) %&gt;%
+        `*`(runif(n = 1, min = 0.01, max = 0.99)) 
+      
+      movement &lt;- movement * tilt
+      item - movement
+    }           
+  }
+  
+  # Apply Crowding
+  res &lt;- df %&gt;%
+    mutate(
+      xmin = imap_dbl(xmin, ~crowding(dat = df, measure = &quot;xmin&quot;, item = .x, index = .y, tilt = xtilt)),
+      xmax = imap_dbl(xmax, ~crowding(df, &quot;xmax&quot;, .x, .y, xtilt)),
+      ymin = imap_dbl(ymin, ~crowding(df, &quot;ymin&quot;, .x, .y, ytilt)),
+      ymax = imap_dbl(ymax, ~crowding(df, &quot;ymax&quot;, .x, .y, ytilt))
+    )
+  
+  output_formatted &lt;- res  %&gt;%
+    select(
+      id,
+      x1 = xmax, x2 = xmin, x3 = xmin, x4 = xmax,  
+      y1 = ymin, y2 = ymin, y3 = ymax, y4 = ymax  
+    ) %&gt;% 
+    pivot_longer(cols = -id) %&gt;%
+    mutate(loc = str_extract(name, &quot;^.&quot;))  %&gt;%
+    pivot_wider(id_cols = id, names_from = loc, values_from = value, values_fn = list) %&gt;%
+    unnest(cols = c(x, y)) %&gt;% 
+    mutate(
+      tile_start_point = paste(start_x, start_y, sep = &quot;_&quot;), 
+      tile_id = paste(tile_start_point, id, sep = &quot;_&quot;) 
+    ) 
+  
+  output_formatted
+}</code></pre>
+<p>Just going to pick a random number between 0.02 and 0.498 for <code>stop_squares_at</code> (half length)</p>
+<pre class="r"><code>prepare_df &lt;- function(rows, cols, my_seed = 9999) {
+  set.seed(my_seed)
+  
+  df &lt;- crossing(start_x = 1:cols, start_y = 1:rows) %&gt;%
+    mutate(
+      id               = row_number(),
+      n_dup            = map_dbl(start_y, ~ifelse(.x == 1, 1, sample(1:.x, 1))), 
+      stop_squares_at  = map_dbl(id,      ~runif(n = 1, min = 0.02,  max = 0.498)),
+      use_fin_square   = TRUE,
+      fin_square_width = 0.05,
+      xtilt = map_dbl(id, ~sample(c(-1, 0, 1), 1)),
+      ytilt = map_dbl(id, ~sample(c(-1, 0, 1), 1))
+    ) %&gt;%
+    mutate(my_seed = my_seed) %&gt;% 
+    select(-id)
+  
+  df %&gt;%
+    pmap_dfr(calc_hyp)
+}</code></pre>
+<pre class="r"><code>plot_n_save(my_seed = 68)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-31-1.png" width="672" /></p>
+<p>C’est bon ca. The final_square now has some life!</p>
+<div id="turn-off-final_square-every-now-and-then" class="section level3">
+<h3>3.4 Turn off final_square every now and then</h3>
+<p>Nothing fancy here, I’m just going to randomize “use_fin_square” and “fin_square_width” (notice it’s mapping over stop_squares_at, working with the remaining space).</p>
+<pre class="r"><code>prepare_df &lt;- function(rows, cols, my_seed = 9999) {
+  set.seed(my_seed)
+  
+  df &lt;- crossing(start_x = 1:cols, start_y = 1:rows) %&gt;%
+    mutate(
+      id               = row_number(),
+      n_dup            = map_dbl(start_y, ~ifelse(.x == 1, 1, sample(1:.x, 1))), 
+      stop_squares_at  = map_dbl(id,      ~runif(n = 1, min = 0.02,  max = 0.498)),
+      use_fin_square   = map_lgl(id,      ~sample(c(TRUE, FALSE), 1))
+    ) %&gt;% 
+    mutate(
+      fin_square_width = map_dbl(stop_squares_at, ~runif(n = 1, min = 0.001, max = 0.5-.x)),
+      xtilt = map_dbl(id, ~sample(c(-1, 0, 1), 1)),
+      ytilt = map_dbl(id, ~sample(c(-1, 0, 1), 1))
+    ) %&gt;%
+    mutate(my_seed = my_seed) %&gt;% 
+    select(-id)
+  
+  df %&gt;%
+    pmap_dfr(calc_hyp)
+}</code></pre>
+<pre class="r"><code>plot_n_save(my_seed = 68, rows = 12, cols = 12)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-33-1.png" width="672" /></p>
+<p>And that’s how I made this!</p>
+</div>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>The biggest accomplishment was to make different variables (that are fairly random) to work with each other in a meaningful way. Everything I did was pretty basic/plain if you think about it (i didn’t even work with angles!), but it was quite the challenge to put it all together. I found that it was really helpful to attack this problem with a little bit more of a structure. I came in with an idea first, and didn’t start coding right away. I thought about the order of things quite a bit, and it was really educational!</p>
+<p>Also, idk about you, but I feel like this isn’t the most efficient way to explain code. I ended up copying and pasting quite a bit, just for the sake of keeping the blogdown to run. Maybe I’ll learn learnr</p>
+<p>Till next time!</p>
+</div>
+</div>
