@@ -1,0 +1,30 @@
+---
+title: June 2021 Bookmarks
+author: Jiwan Heo
+date: '2021-06-30'
+tags:
+  - bookmarks
+thumbnail: featured.jpg
+thumbnailby: '@brandoncmorales'
+---
+
+Heya, here's a bunch of bookmarks I collected this month:
+
+- [Ideas and concepts on gen art](https://github.com/jasonwebb/morphogenesis-resources)
+- [OpenProcessing](https://openprocessing.org/)
+- [Shader Coding on Youtube](https://www.youtube.com/watch?v=2R7h76GoIJM&t=340s)
+- [Apparently there are 17 types of tiling](https://en.wikipedia.org/wiki/Wallpaper_group)
+- [I was super into tiling this month](https://en.wikipedia.org/wiki/Tessellation)
+- [Really good math channel](https://www.youtube.com/watch?v=sMBeuEo9DvI)
+- [Truchet tiles](https://www.youtube.com/watch?v=sMBeuEo9DvI)
+- [Different use of . in R](https://stackoverflow.com/questions/54815607/r-combinations-with-dot-and-pipe-operator/54815713#54815713)
+- [Big soccer guy](https://torvaney.github.io/)
+- [NBA data news](https://thef5.substack.com/)
+- [Penrose tiles](https://www.youtube.com/watch?v=ru9MrsHaGAk)
+- [Control API pull rate](https://github.com/tarakc02/ratelimitr)
+- [Smooth loops](https://necessarydisorder.wordpress.com/)
+- [Emil's tips on purrr](https://www.hvitfeldt.me/blog/purrr-tips-and-tricks/)
+- [Web scraping with R](https://colinfay.me/purrr-web-mining/)
+- [Skew Normal Distribution](https://www.sciencedirect.com/science/article/pii/S0047259X11001126)
+- [dplyr::all_equal()](https://sharla.party/post/comparing-two-dfs/)
+- [This gen art blog looks sick](https://www.artnome.com/news/2018/3/29/ai-art-just-got-awesome)
