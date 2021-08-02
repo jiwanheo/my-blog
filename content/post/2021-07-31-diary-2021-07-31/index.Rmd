@@ -1,0 +1,26 @@
+---
+title: Diary 2021-07-31
+author: Jiwan Heo
+date: '2021-07-31'
+tags:
+  - diary
+thumbnail: featured.jpg
+thumbnailby: '@dakotaroosphotography'
+---
+
+What's up y'all, it's a beautiful summer so far in Ontario, and it's been a great month again! I'm writing this in August, but cut me some slack - I'm on vacation! lol
+
+I've been spending most of my productive free time doing the [#RecreationThursday](https://github.com/sharlagelfand/RecreationThursday) challenge on Twitter, and reading a bunch of R books (tmwr, advr, psfds, ...) 
+
+Of course, every Tuesday, I've been following along with [#SLICED](https://www.notion.so/SLICED-Show-c7bd26356e3a42279e2dfbafb0480073) data science competition. Training the models actually eats up my shitty laptop, and most times, I'm not able to make a good submission within the 2 hour window. So I'm actually thinking about pulling the trigger on a Macbook with M1 chip.
+
+They poured the foundation at the new place!
+
+What else? 
+
+- Golf. Tons of golf
+- I should learn Bayesian statistics
+- I'm trying to talk to more data science professionals to learn what's out there (so far talked to 1 lol)
+- There are talks of white water rafting with some friends at the end of August 👀
+
+Overall, really good few months lately. I'm really enjoying life
