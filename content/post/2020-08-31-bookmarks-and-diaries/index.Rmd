@@ -1,0 +1,147 @@
+---
+title: Bookmarks and Diaries
+author: Jiwan Heo
+date: '2020-08-31'
+tags:
+  - bookmarks
+  - webdev
+thumbnail: "featured.jpg"
+thumbnailby: "@mohammadfathollahi"
+---
+
+# 2020 August
+
+For someone who's learning CSS, I should really start styling this blog.
+
+- https://www.youtube.com/watch?v=sppSnBQVt0k&list=WL&index=11&t=4774s Where it all started
+- https://github.com/getify/You-Dont-Know-JS
+- https://eloquentjavascript.net/
+- https://codemyui.com/
+- https://tevko.github.io/practice/
+- https://every-layout.dev/
+- https://htmlpreview.github.io/ This is one of my favourites, b/c I can quickly share htmls
+- https://www.smashingmagazine.com/articles/
+- https://rachelandrew.co.uk/archives/2020/04/07/making-things-better/
+- https://ohhelloana.blog/ I love her blog, this is where I saw the bookmarks idea first!
+- https://uigradients.com/#ColorsOfSky
+- https://vineethtrv.github.io/loader/
+- https://website-gallery.now.sh/
+- https://medium.com/javascript-in-plain-english/creating-3d-layout-with-css-using-grid-perspective-65cd03dfc56c Her work looks really interesting! This is on my to-learn list
+- https://codepen.io/collection/XzePLw
+
+Starting to use a little bit of Javascript. Mostly to add a class to an element when clicked.
+
+# 2020 September
+
+Haven't been coding too much outside work lately. I've been reading this book "Thinking fast and slow" by Daniel Kahneman. Pretty good book so far, but I'm in the slow stretch right now haha! Trying to read at least half an hour everyday, which is like 10 pages for me, and I have 200 pages left, so hopefully I finish the book this month! 
+
+Also, I've been cooking a fair amount of new food. Mostly Italian food, but I'm trying to semi-adopt the Meditarranean diet, which is basically eating tons of veggies, fish and less red meat. I encourage everyone to try it! It's a healthy principle without taking away too much fun :)
+
+- https://www.interaction-design.org/literature/topics/gestalt-principles
+- https://blog.datawrapper.de/weeklychart-logscale/
+- https://lisacharlotterost.de/ Love this blog. So much practical tips!
+- https://blog.datawrapper.de/beautifulcolors/
+- https://medium.com/free-code-camp/we-fired-our-top-talent-best-decision-we-ever-made-4c0a99728fde This post was really cool. "Rick" is an interesting concept. Let's try not to be one, but the comment section is where the real discussion happens, so make sure to check it out!
+- https://www.youtube.com/watch?v=C13JC_YP2Q8&feature=youtu.be - Linda is great. Her recommendation of the book "Thinking fast and slow" is what I'm reading right now.
+- https://medium.economist.com/why-you-sometimes-need-to-break-the-rules-in-data-viz-4d8ece284919
+- https://gabriellew.ee/
+
+# 2021 April
+
+Hey,  
+
+I decided to start a dedicated diary section using #diary tag! With the blog posts, I like starting with a quick update on my personal life at the moment. Sometimes, I really want to write a little more than a couple sentences, but stop myself for the sake of keeping the post relevant to the topic. As someone who doesn't take too many pictures of anything, there are periods in my life that I have little recollection of what was going on at the time. So yea, I'm hoping to write regularly here (once a month? maybe more?), and look back at this tag later! 
+
+I don't really have any specific format in mind, but this time, I sat down for a couple hours thinking/reflecting on life, wrote whatever came to mind, __left the desk__, came back, read what I said, and edited.
+
+Listening to [the Marias](https://www.youtube.com/watch?v=fTJ0Pvt56aI) right now. I think I found these guys at the beginning of this year, and been in love with them! They hit the sweet spot for me, that nice mix between electronic groove and rock. Other artists I like at the moment: 53 Thieves, Men I Trust, John Mayer, CHVRCHES (throwback to 17-18 y/o me), 새소년 (blog plz render korean), Barrie, Chet Atkins.
+
+I got promoted at work! Since March, I've been the "BI Advisor" at the same team. I still dig into problem solving, but I'm hoping to help facilitate in-depth data analytics collaboration between teams. 
+
+Recently, I started using Twitter to follow data science people and it's a gem! Communities like [R4DS slack channel](https://www.rfordatasci.com/) and [Nick Wan's twitch streams](twitch.tv/nickwan_datasci) are exactly what I needed, because I don't have any real life friends in data science ! If you use R, I highly recommend hopping on slack! I'm in 2 weekly book clubs right now (advanced R & tidy modeling with R), and hoping to join another one soon! (Practical Statistics for Data Scientists) These not only keep your learning on track, but also help you work on presentation skills! :D
+
+Speaking of Twitter, I've been doing the #TidyTuesday, where a bunch of people make cool visualizations using the weekly data by [r4ds](https://github.com/rfordatascience/tidytuesday). I love the works from [Georgios Karamanis](https://twitter.com/geokaramanis) and [Alexandra Bagaïni](https://twitter.com/a_bagaini). Also, I don't participate in this one but #30DayChartChallenge is really fun too! 
+
+On a tad serious note, I do feel some lockdown/covid stress recently, the April lockdown really brings me down. I'm not cooking as much new things as I used to, and appetite is low. I'm around 145lbs nowadays. Really miss hanging out with friends after work at the Royal Oak, and kickboxing with training partners. I do my best to stay positive & active with running and bodyweight exercises, but it's been really tough to stay motivated. 
+
+Kinda want to get a dog, am i responsible enough? we'll see
+
+# 2021 May
+
+Hiya, pretty uneventful month lol I did get vaxxed, so that's good! 
+
+I'm getting more interested in making arts with ggplot. This means catching up in geometry, and some maths. I'm in need of a structure though. Right now, I just kinda learn whatever looks interesting to me, but it'd be nice to have a checklist of important concepts to learn. I do watch Coding Train on Youtube, which gives an idea of what's out there.
+
+Norm Powell looks good on the Blazers.
+
+Vanilla is a really good musician. 
+
+- [A whole course on gen art??? But cest french](https://github.com/v3ga/Cours_Bordeaux_Montaigne/tree/master/L2_2020_2021)
+- [Cool viz that I should do](https://blog.datawrapper.de/stacked-bar-chart-art/)
+- [Cool generative art blog](https://generativeartistry.com/tutorials/)
+- [Another cool gen. art blog](https://tholman.com/)
+- [Book on Typography](https://practicaltypography.com/)
+- [Cairo has a podcast](https://anchor.fm/ddjpodcast)
+- [Magick masking](https://www.ddrive.no/post/miracles-with-magick-and-bunny/)
+- [Magick colour extracting](https://www.rostrum.blog/2018/11/25/art-of-the-possible/)
+- [Book on forecasting](https://otexts.com/fpp3/)
+- [Resources on bayesian](https://github.com/rmcelreath/statrethinking_winter2019)
+- [French keyboards](https://superuser.com/questions/743920/how-to-type-french-specific-characters-on-a-standard-us-keyboard-on-windows-usin)
+- [Ottawa doggos](https://www.kiwisphotography.com/blog/2021/2/15/guide-to-ottawa-dog-rescues)
+- [Brag your documentation](https://jvns.ca/blog/brag-documents/)
+- [Colour Palettes](https://github.com/EmilHvitfeldt/r-color-palettes/blob/master/README.md#comprehensive-list-of-color-palettes-in-r)
+- [Tufte Style Blog](http://motioninsocial.com/tufte/)
+- [Cédric Scherer's ggplot guide](https://www.cedricscherer.com/2019/08/05/a-ggplot2-tutorial-for-beautiful-plotting-in-r/)
+
+# 2021 June
+
+Hiya, hope you're doing alright!
+
+This month was pretty eventful! The corona situation looks certainly better than spring, and that means I can enjoy the summer! I still mainly stick to outdoors activities like golf and patios, but that's all I really need when the weather's good! All in for the roaring 20's
+
+I'm fully invested in making generative arts with R. The more I do it, the more I fall in love with making it work. Right now, I'm just about to start the "Rainbow Smoke Bomb", so stay tuned :)
+
+Lots of 80s pop
+
+_Kinda_ cooking again
+
+Working out again! My roommate's bought some weights
+
+Overall, I've been in a great mood this month. Hope you are too. Bye!
+
+- [Ideas and concepts on gen art](https://github.com/jasonwebb/morphogenesis-resources)
+- [OpenProcessing](https://openprocessing.org/)
+- [Shader Coding on Youtube](https://www.youtube.com/watch?v=2R7h76GoIJM&t=340s)
+- [Apparently there are 17 types of tiling](https://en.wikipedia.org/wiki/Wallpaper_group)
+- [I was super into tiling this month](https://en.wikipedia.org/wiki/Tessellation)
+- [Really good math channel](https://www.youtube.com/watch?v=sMBeuEo9DvI)
+- [Truchet tiles](https://www.youtube.com/watch?v=sMBeuEo9DvI)
+- [Different use of . in R](https://stackoverflow.com/questions/54815607/r-combinations-with-dot-and-pipe-operator/54815713#54815713)
+- [Big soccer guy](https://torvaney.github.io/)
+- [NBA data news](https://thef5.substack.com/)
+- [Penrose tiles](https://www.youtube.com/watch?v=ru9MrsHaGAk)
+- [Control API pull rate](https://github.com/tarakc02/ratelimitr)
+- [Smooth loops](https://necessarydisorder.wordpress.com/)
+- [Emil's tips on purrr](https://www.hvitfeldt.me/blog/purrr-tips-and-tricks/)
+- [Web scraping with R](https://colinfay.me/purrr-web-mining/)
+- [Skew Normal Distribution](https://www.sciencedirect.com/science/article/pii/S0047259X11001126)
+- [dplyr::all_equal()](https://sharla.party/post/comparing-two-dfs/)
+- [This gen art blog looks sick](https://www.artnome.com/news/2018/3/29/ai-art-just-got-awesome)
+
+# 2021 July
+
+What's up y'all, it's a beautiful summer so far in Ontario, and it's been a great month again! I'm writing this in August, but cut me some slack - I'm on vacation! lol
+
+I've been spending most of my productive free time doing the [#RecreationThursday](https://github.com/sharlagelfand/RecreationThursday) challenge on Twitter, and reading a bunch of R books (tmwr, advr, psfds, ...) 
+
+Of course, every Tuesday, I've been following along with [#SLICED](https://www.notion.so/SLICED-Show-c7bd26356e3a42279e2dfbafb0480073) data science competition. Training the models actually eats up my shitty laptop, and most times, I'm not able to make a good submission within the 2 hour window. So I'm actually thinking about pulling the trigger on a Macbook with M1 chip.
+
+They poured the foundation at the new place!
+
+What else? 
+
+- Golf. Tons of golf
+- I should learn Bayesian statistics
+- I'm trying to talk to more data science professionals to learn what's out there (so far talked to 1 lol)
+
+Overall, really good few months lately. I'm really enjoying life
