@@ -1,0 +1,372 @@
+---
+title: How to work with flow fields in R
+author: Jiwan Heo
+date: '2021-09-17'
+tags:
+  - LetsBeArtistic
+thumbnail: featured.png
+thumbnailby: '@Cest Moi'
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<p>Hello!</p>
+<p>Just wanted to share some new techniques I learned while working on <a href="https://twitter.com/kelsey_chalmers/status/1430875667793682432">week 7 of #RecreationThursday challenge</a>. Specifically, we’ll focus on using the flow field to draw smooth curves.</p>
+<p>I ended up submitting this, but I got so much better while writing this blog post!</p>
+<p><img src="https://pbs.twimg.com/media/E_bUVlUWUAUwdar?format=jpg&amp;name=small" style="width:30.0%" /></p>
+<p>I mainly tried to find the right parameter combinations that work with certain colours, by trial and error. Here are some of my favourites.</p>
+<p><img src="img/gallery/pic1.png" style="width:30.0%" /> <img src="img/gallery/pic2.png" style="width:30.0%" /> <img src="img/gallery/pic3.png" style="width:30.0%" /></p>
+<p><img src="img/gallery/pic4.png" style="width:30.0%" /> <img src="img/gallery/pic5.png" style="width:30.0%" /> <img src="img/gallery/pic6.png" style="width:30.0%" /></p>
+<p>These are some resources that got me started, as a complete beginner in this area:</p>
+<ul>
+<li><a href="https://tylerxhobbs.com/essays/2020/flow-fields">Tyler Hobbs’ essay</a></li>
+<li><a href="https://www.youtube.com/watch?v=JlU3GskkcUw">Generative Garden’s Youtube video</a></li>
+</ul>
+<p>Without further ado, let’s first go through the basics, before we start diving into more interesting details.</p>
+<div id="flow-field-basics" class="section level1">
+<h1>Flow Field Basics</h1>
+<p>The steps I took are:</p>
+<ol style="list-style-type: decimal">
+<li>Set up a grid, and store some angles in each item.</li>
+<li>Drop a point somewhere on the grid (or outside!), and see how it moves, by:</li>
+<li>Find the grid item that is closest to the current position.</li>
+<li>Extend the current position with that angle, by a specified amount.</li>
+<li>Repeat.</li>
+</ol>
+<p>We’ll start with a 10 x 10 grid, and initialize all items with some angles. I’m just going to fit 0 ~ 2*pi according to the y-position.</p>
+<p>I like to start by crossing x/y combinations, because it works so well with <code>ggplot2</code>, but we’re going to throw it into a matrix for later use (row/col indexing).</p>
+<pre class="r"><code>library(tidyverse)
+
+my_grid &lt;- crossing(
+  x = 1:10,
+  y = 1:10
+) %&gt;% 
+  mutate(angle = (y / 10) * 2*pi)
+
+my_flow_field &lt;- matrix(data = my_grid$angle, nrow = 10, ncol = 10)</code></pre>
+<p>This is what we have:</p>
+<pre class="r"><code>grid_visualized &lt;- my_grid %&gt;% 
+  mutate(
+    xend = x + cos(angle) * 0.5,
+    yend = y + sin(angle) * 0.5
+  ) %&gt;% 
+  ggplot() +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_point(aes(x = x, y = y)) +
+  coord_equal()
+
+grid_visualized</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>We’ll drop a couple particles, defined as a tibble containing x/y coords.</p>
+<pre class="r"><code>my_particles &lt;- tibble(
+  x = c(2.5, 8.5),
+  y = c(2.5, 3.5)
+)
+
+grid_visualized +
+  geom_point(data = my_particles, aes(x = x, y = y), color = &quot;red&quot;, size = 3)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>Let’s perform one iteration of step 3, 4 &amp; 5 from the above.</p>
+<blockquote>
+<ol start="3" style="list-style-type: decimal">
+<li>Find the grid item that is closest to the current position.</li>
+<li>Extend the current position with that angle, by a specified amount.</li>
+<li>Repeat</li>
+</ol>
+</blockquote>
+<p>To do this, we find the col/row index in the flow field that’s closest to the current particle’s x/y position. For now, one unit increase in x/y coords, matches one unit increase in col/row in the flow field grid (we’ll come back to this later).</p>
+<p>Grab that angle in the flow field, and draw a line from the particle at that angle by a specified amount. (say 2.8)</p>
+<pre class="r"><code>get_closest_angle &lt;- function(x, y, flow_field) {
+  max_x &lt;- ncol(flow_field)
+  max_y &lt;- nrow(flow_field)
+  
+  closest_x_index &lt;- which(abs(1:max_x - x) == min(abs(1:max_x - x)))[[1]] # Pick the first one, if there&#39;s multiple points with same distances
+  closest_y_index &lt;- which(abs(1:max_y - y) == min(abs(1:max_y - y)))[[1]] 
+  closest_angle &lt;- flow_field[[closest_y_index, closest_x_index]]
+  
+  return(closest_angle)
+}
+
+next_angle &lt;- my_particles %&gt;% 
+  pmap_dbl(get_closest_angle, flow_field = my_flow_field)
+
+my_particles &lt;- my_particles %&gt;% 
+  mutate(angle = next_angle) %&gt;% 
+  mutate(xend = x + cos(angle) * 2.8,
+         yend = y + sin(angle) * 2.8)
+
+grid_visualized +
+  geom_segment(data = my_particles, aes(x = x, y = y, xend = xend, yend = yend), color = &quot;red&quot;) +
+  geom_point(data = my_particles, aes(x = x, y = y), color = &quot;red&quot;, size = 3)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p>You can keep iterating this, each time, using the newly calculated destination points as the starting x/y coords for the next line to be drawn.</p>
+<p>After 1 more iteration, you end up with this:</p>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p>That’s it! This is all you need to understand to get started with the flow field. After this, it’s just playing around with parameters to explore your creativity!</p>
+</div>
+<div id="beyond-the-basics" class="section level1">
+<h1>Beyond the Basics</h1>
+<p>I broke down the workflow above, into 3/4 controllable functions.</p>
+<ol style="list-style-type: decimal">
+<li><code>generate_flow_field</code></li>
+<li><code>start_particles</code></li>
+<li><code>draw_curve</code> + <code>step_into_next_curve_segment</code></li>
+</ol>
+<p>In short, these work together to define a flow field with perlin noise, sprinkle some particles, and track how they move.</p>
+<p>Chaining all the functions together was a little manual, so I won’t cover that, but if you’re interested, check my <a href="https://github.com/jiwanheo/RecreationThursday/blob/main/week07/code.Rmd">github</a>.</p>
+<div id="generate_flow_field" class="section level2">
+<h2>1. <code>generate_flow_field</code></h2>
+<p><strong>What it does:</strong> Generate a square flow field. This time with a width, as opposed to # columns.</p>
+<p>We’ll still control how many rows/cols to fit into that given width/height, using a <code>resolution_factor</code>. Also, instead of y-scaling the angles, let’s use perlin noise to generate semi-random patterns.</p>
+<pre class="r"><code>library(ambient)
+
+generate_flow_field &lt;- function(flow_field_width = 1000, 
+                                resolution_factor = 0.025,
+                                perlin_scale_factor = 0.005,
+                                perlin_seed,
+                                perlin_freq) {
+  
+  resolution &lt;- flow_field_width * resolution_factor 
+  num_cols &lt;- flow_field_width %/% resolution
+  num_rows &lt;- num_cols
+  
+  long_grid_ff &lt;- ambient::long_grid(x = 1:num_cols,
+                                     y = 1:num_rows) %&gt;%
+    mutate(x = x * perlin_scale_factor,
+           y = y * perlin_scale_factor) %&gt;% 
+    mutate(angle = ambient::gen_perlin(x, 
+                                       y,
+                                       seed = perlin_seed,
+                                       frequency = perlin_freq))
+  
+  # normalize angles to be between 0 &amp; 2pi
+  min_per &lt;- min(long_grid_ff$angle)
+  max_per &lt;- max(long_grid_ff$angle)
+  
+  long_grid_ff &lt;- long_grid_ff %&gt;% 
+    mutate(angle = (angle-min_per) / (max_per-min_per) *  (2*pi-0) + 0)
+  
+  my_flow_field &lt;- matrix(data = long_grid_ff$angle,
+                          ncol = num_cols,
+                          nrow = num_rows)
+  
+  visualized_flow_field &lt;- crossing(
+    x = 1:num_cols,
+    y = 1:num_rows
+  ) %&gt;% 
+    mutate(angle = map2_dbl(x, y, ~my_flow_field[[.y, .x]])) %&gt;% 
+    mutate(xend = x + cos(angle) * 0.5,
+           yend = y + sin(angle) * 0.5) %&gt;% 
+    mutate(x_index = x, y_index = y) %&gt;% 
+    mutate(across(c(x, y, xend, yend), ~ .x * resolution))
+  
+  list(my_flow_field, visualized_flow_field)
+}</code></pre>
+<div id="parameter-resolution" class="section level3">
+<h3>Parameter: Resolution</h3>
+<p>Resolution determines how fine of a flow field we want, therefore the overall smoothness of the output.</p>
+<p>Here’s small vs big <code>resolution_factor</code>, all else equal.</p>
+<p><img src="img/resolution-factor/small-resolution-factor.png" style="width:40.0%" /> <img src="img/resolution-factor/big-resolution-factor.png" style="width:40.0%" /></p>
+<p>The choppy look on the right makes sense, because the underlying flow field doesn’t have too many angles to work with.</p>
+<p><img src="img/resolution-factor/small-resolution-factor-ff.png" style="width:40.0%" /> <img src="img/resolution-factor/big-resolution-factor-ff.png" style="width:40.0%" /></p>
+</div>
+<div id="parameter-perlin-noise" class="section level3">
+<h3>Parameter: Perlin Noise</h3>
+<p>Perlin noise generates a semi-random sequence of numbers, in a way that all items are somewhat similar to their immediate neighbours. This sounds pretty confusing. But for now, all we have to know is, that we can feed the sequence of row/col grid indexes, to get back some interesting and smooth sequence of noise (same length).</p>
+<p>After some research, I got a decent understanding of how perlin noise worked, but I relied heavily on Thomas Lin Pedersen’ <a href="https://github.com/thomasp85/ambient">ambient package</a> for the actual maths part.</p>
+<p>There’s a ton of good resources if you want to learn more. I liked <a href="https://www.youtube.com/watch?v=8ZEMLCnn8v0">The Coding Train on YouTube</a> and <a href="https://eev.ee/blog/2016/05/29/perlin-noise/">Eevee’s blog post</a>.</p>
+<div id="perlin-noise---scale" class="section level4">
+<h4>Perlin Noise - scale</h4>
+<p><code>perlin_scale_factor</code> controls how large of a perlin noise sequence we want to look at. It scales our row/col index sequence, before feeding them to the <code>ambient::gen_perlin</code> transformation.</p>
+<p>The larger the scale factor, the longer the length of the noise sequence. On the other hand, if the factor is small, we zoom in to a small part of the sequence, resulting in less craziness.</p>
+<p>Here’s small vs big <code>perlin_scale_factor</code></p>
+<p><img src="img/scale-factor/moderate-perlin-scale-factor.png" style="width:30.0%" /> <img src="img/scale-factor/big-perlin-scale-factor.png" style="width:30.0%" /></p>
+<p>On the left, the curves are wider and slower, whereas on the right, the curves are more hairy, because we run it through a wider range of noise sequence.</p>
+</div>
+<div id="perlin-noise---seed" class="section level4">
+<h4>Perlin Noise - seed</h4>
+<p><code>perlin_seed</code> is just a seed used for the noise generating process. Here are some variations of my favourite piece:
+<img src="img/seed/pic1.png" style="width:30.0%" /> <img src="img/seed/pic2.png" style="width:30.0%" /> <img src="img/seed/pic3.png" style="width:30.0%" /></p>
+<p><img src="img/seed/pic4.png" style="width:30.0%" /> <img src="img/seed/pic5.png" style="width:30.0%" /> <img src="img/seed/pic6.png" style="width:30.0%" /></p>
+</div>
+<div id="perlin-noise---frequency" class="section level4">
+<h4>Perlin Noise - frequency</h4>
+<p>The documentation of <code>ambient::gen_perlin</code> says:</p>
+<blockquote>
+<p>frequency determines the granularity of the features in the noise.</p>
+</blockquote>
+<p>I really didn’t understand how exactly this parameter works, but I did observe, that the higher the frequency, the more rigid the outcome looked. These do come into play in colour selection. More on that later!</p>
+<p>Anyway, here’s small vs big <code>perlin_freq</code></p>
+<p><img src="img/frequency/pic1.png" style="width:30.0%" /> <img src="img/frequency/pic2.png" style="width:30.0%" /></p>
+<p>Tuning <code>perlin_freq</code> and <code>perlin_scale_factor</code> at the same time gives you some interesting results. Highly recommended.</p>
+<p>And that’s it for this function! We now have a flow field to work with.</p>
+</div>
+</div>
+</div>
+<div id="start_particles" class="section level2">
+<h2>2. <code>start_particles</code></h2>
+<p><strong>What it does:</strong> Populate some particles</p>
+<p>I sampled the starting x/y points from a uniform distribution with 10% padding on the flow field width/height from both ends.</p>
+<pre class="r"><code>start_particles &lt;- function(n_out = 800,
+                            flow_field_width,
+                            num_steps,  
+                            step_length,
+                            flow_field,
+                            resolution_factor)
+{      
+  df &lt;- tibble::tibble(
+    start_x = runif(flow_field_width*-0.1, flow_field_width*1.1, n=n_out),
+    start_y = runif(flow_field_width*-0.1, flow_field_width*1.1, n=n_out)
+  ) %&gt;%
+    mutate(row_num = row_number(),
+           resolution = flow_field_width * resolution_factor,
+           num_steps = num_steps,
+           step_length = step_length)
+  
+  df %&gt;% 
+    pmap_dfr(draw_curve, 
+             flow_field = flow_field)
+}</code></pre>
+<div id="parameter-n_out" class="section level3">
+<h3>Parameter: n_out</h3>
+<p>The only parameter we really use here is <code>n_out</code>, which specifies the number of particles to drop. The rest, we pass onto <code>draw_curve</code>, to kick-start the curve generating process.</p>
+<p>Here’s <code>n_out</code> at 200 vs 400 vs 1000</p>
+<p><img src="img/n-out/small-n-out.png" style="width:30.0%" /> <img src="img/n-out/med-n-out.png" style="width:30.0%" /> <img src="img/n-out/big-n-out.png" style="width:30.0%" /></p>
+<p>While the drawing gets more details with increasing <code>n_out</code>, if done too much, you start to get “clumps” of lines, which may or may not be desirable.</p>
+</div>
+</div>
+<div id="draw_curve-step_into_next_curve_segment" class="section level2">
+<h2>3. <code>draw_curve</code> &amp; <code>step_into_next_curve_segment</code></h2>
+<p><strong>What it does:</strong> Simulate curve movement, and save the result</p>
+<p>This is where the action unfolds. <code>draw_curve</code> starts the curve drawing process (… well, a collection of small lines). We begin by creating a vector of length: <code>num_steps</code>+1, and store the starting x/y of a particle as the first item. From there, we calculate where the particle will move to next, with <code>step_into_next_curve_segment</code>. We’ll call it <code>num_steps</code> times, storing the results each time.</p>
+<div id="draw_curve" class="section level3">
+<h3>3.1 <code>draw_curve</code></h3>
+<pre class="r"><code>draw_curve &lt;- function(start_x, 
+                       start_y, 
+                       row_num, 
+                       flow_field, 
+                       resolution, 
+                       left_x = 1 * resolution, 
+                       bot_y  = 1 * resolution,
+                       num_steps,   
+                       step_length) 
+{ 
+  
+  x_container &lt;- vector(&quot;numeric&quot;, num_steps+1)
+  y_container &lt;- vector(&quot;numeric&quot;, num_steps+1)
+  
+  x_container[1] &lt;- start_x
+  y_container[1] &lt;- start_y
+  
+  
+  # grid dimension range
+  x_dim_range &lt;- 1:ncol(flow_field) 
+  y_dim_range &lt;- 1:nrow(flow_field)
+  
+  # With the rest of num_steps, move through the flow field, 
+  # Each time, stepping towards the closest angle we can grab.
+  for (i in 1:num_steps) {
+    
+    next_step &lt;- step_into_next_curve_segment( 
+      start_x     = x_container[i], 
+      start_y     = y_container[i],
+      left_x      = left_x,
+      bot_y       = bot_y,
+      resolution  = resolution,
+      x_dim_range = x_dim_range,
+      y_dim_range = y_dim_range,
+      flow_field  = flow_field,
+      step_length = step_length
+    )
+    
+    x_container[i+1] &lt;- next_step$x
+    y_container[i+1] &lt;- next_step$y
+    
+  }
+  
+  tibble::tibble(
+    x = x_container,
+    y = y_container,
+    row_num = row_num 
+  ) %&gt;%               
+    dplyr::mutate(plot_order = dplyr::row_number())  
+}</code></pre>
+<p>Notice the return value of this function (tibble containing x/y coordinates) has two different id columns, <code>row_num</code> &amp; <code>plot_order</code>, for line-specific &amp; segment-of-a-line-specific groupings. We’ll use this for colours later.</p>
+<div id="parameter-num_steps-step_length" class="section level4">
+<h4>Parameter: num_steps &amp; step_length</h4>
+<p>These two parameters control the overall texture/feel of the “brush stroke”s.</p>
+<p><code>num_steps</code> controls how many times we want to extend our particles. Here’s <code>num_steps</code> 500 vs 2000 at <code>step_length</code> == 0.001</p>
+<p><img src="img/num-steps/short-num-steps.png" style="width:30.0%" /> <img src="img/num-steps/long-num-steps.png" style="width:30.0%" /></p>
+<p><code>step_length</code> controls how long each line segment should extend from its previous positions. Here’s <code>step_length</code> 0.001 vs 0.005 at <code>num_steps</code> == 2000 (*different seed from above)</p>
+<p><img src="img/step-length/short-step-length.png" style="width:30.0%" /> <img src="img/step-length/long-step-length.png" style="width:30.0%" /></p>
+<p>They <em>can</em> be redundant in some situations, and look very similar. Try experimenting these with other parameters, like <code>resolution_factor</code>, <code>perlin_scale_factor</code>, <code>perlin_freq</code> and colours.</p>
+</div>
+</div>
+<div id="step_into_next_curve_segment" class="section level3">
+<h3>3.1 <code>step_into_next_curve_segment</code></h3>
+<p><strong>What it does:</strong> Calculate the next movement of a particle, and return its x/y position.</p>
+<p>This is the workhorse of the whole process. Thankfully, we’ve already looked at something similar to this in the basics section above.</p>
+<p>There’s really no parameters to play with here, everything has been decided before reaching this function.</p>
+<pre class="r"><code>step_into_next_curve_segment &lt;- function(start_x, 
+                                         start_y,
+                                         left_x,
+                                         bot_y,
+                                         resolution,
+                                         x_dim_range,
+                                         y_dim_range,
+                                         flow_field,
+                                         step_length) 
+{
+  # Get the current x/y position (in relation to grid size)
+  x_offset &lt;- start_x - left_x
+  y_offset &lt;- start_y - bot_y
+  
+  # Scale it down, to match grid dimension
+  curr_x_index &lt;- round(x_offset / resolution, digits = 0)
+  curr_y_index &lt;- round(y_offset / resolution, digits = 0)
+  
+  # Find the closest point on the grid at each x/y 
+  closest_x_index &lt;- which(abs(x_dim_range - curr_x_index) == min(abs(x_dim_range - curr_x_index)))[[1]]
+  closest_y_index &lt;- which(abs(y_dim_range - curr_y_index) == min(abs(y_dim_range - curr_y_index)))[[1]]
+  
+  # Grab that angle
+  closest_angle &lt;- flow_field[[closest_y_index, closest_x_index]]
+  
+  # Extend the current line into that angle (scale it up again)
+  x_step  &lt;- step_length * cos(closest_angle) * resolution
+  y_step  &lt;- step_length * sin(closest_angle) * resolution
+  res_x &lt;- start_x + x_step
+  res_y &lt;- start_y + y_step
+  
+  list(x = res_x, y = res_y)
+  
+}</code></pre>
+<p>And… You’ve made it! That’s how everything fits in together! 🎉</p>
+</div>
+</div>
+</div>
+<div id="final-touch---colours" class="section level1">
+<h1>Final touch - colours</h1>
+<p>We’re almost there! Hear me out for a second while I put a finishing touch to our art piece with some colour work.</p>
+<p>If you’ve noticed so far, I’ve been mixing in 3-4 different colours.</p>
+<ul>
+<li>Background</li>
+<li>Circle (sometimes same as background)</li>
+<li>2-colour gradient to fill in the lines.</li>
+</ul>
+<p>To make the 2-colour gradient work, I filled every single line segment (of length <code>step_length</code>) separately, by sampling 2 colours with weights based on y-location. (one colour is more dominant at the top) Like so:</p>
+<p><img src="img/colour-method/segment.png" style="width:40.0%" /> <img src="img/colour-method/colour-palette.png" style="width:40.0%" /></p>
+<p>But here’s the catch. Remember the awkward wording I had on groupings in function #3, <code>draw_curve</code>?</p>
+<blockquote>
+<p>Notice the return value of this function has two different id columns, <code>row_num</code> &amp; <code>plot_order</code>, for line-specific &amp; segment-of-a-line-specific groupings. We’ll use this for colours later.</p>
+</blockquote>
+<p>Using these id columns, I can apply my colour palettes at either line or segment level. So far, I’ve been mostly doing segment colouring, but there are 2 line colouring methods that I explored. (weighted on mean y of line vs starting y of line)</p>
+<p>Left-to-right: segment, line-mean, line-start</p>
+<p><img src="img/colour-method/segment.png" style="width:30.0%" alt="Segment Colouring" /> <img src="img/colour-method/line-mean.png" style="width:30.0%" alt="Line-mean Colouring" /> <img src="img/colour-method/line-start.png" style="width:30.0%" alt="Line-start Colouring" /></p>
+<p>The difference between 2 line methods is subtle. You’ll notice that there’s more blue flowing into the bottom right corner, because those lines started in the upper half of the picture.</p>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>Hope you enjoyed this tutorial! I absolutely loved working on this, and writing this blog post really took my understanding of this concept to a new level. If you’ve read this far, you can do everything I’ve shown here, without a doubt. There’s a ton of things you can do with this concept, and I encourage you to explore all the possibilities!</p>
+</div>
