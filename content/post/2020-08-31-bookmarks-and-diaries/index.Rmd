@@ -145,3 +145,91 @@ What else?
 - I'm trying to talk to more data science professionals to learn what's out there (so far talked to 1 lol)
 
 Overall, really good few months lately. I'm really enjoying life
+
+# 2021 Oct
+
+Hey, it's been quite a while since I wrote one of these. 
+
+I'm traveling to Germany in late November! Should be a nice change of pace. First time taking a long vacation since corona, so I'm really excited!
+
+I've been reading a shit ton of R related contents. I really wanna get good at making packages and shiny apps. Also recently attended RinPharma, and saw a bunch of cool stuff! I don't know anything about this area, but lots of use cases for R there, and I think it's a good area to improve my R skills in.
+
+I really made some good milestone on my [artwork!](https://twitter.com/jiwanheo/status/1452803930925174790) Printed and framed my flow field piece.
+
+The past 3 months have been meh. Feel like I've just been going through the motion, stuck in the somewhat negative and stressed mental space, doing the same old stuff. I'm gonna turn this shit around.
+
+I have a ton of bookmarks:
+
+### Art
+
+- [Generative Art blog](https://sighack.com/)
+- [Perlin Noise](http://adrianb.io/2014/08/09/perlinnoise.html)
+- [Perlin Noise](https://eev.ee/blog/2016/05/29/perlin-noise/)
+- [Perlin Noise](https://blog.demofox.org/2021/04/11/perlin-noise-experiments/)
+- [Collision Detection](https://ericleong.me/research/circle-line/)
+- [Collision Detection](http://www.jeffreythompson.org/collision-detection/poly-point.php)
+- [Dot Product](http://www.math.pitt.edu/~sparling/23021/23021vectorsand2dlines3/node10.html)
+- [Tyler Hobbs Interview](https://www.youtube.com/watch?v=Bufm7VR4nfg)
+- [Closest point to a line](https://diego.assencio.com/?index=ec3d5dfdfc0b6a0d147a656f0af332bd)
+- [Closest point to a line](http://paulbourke.net/geometry/pointlineplane/)
+- [Book on Grid](https://www.amazon.com/dp/3721201450)
+- [Book recommendation](https://twitter.com/sableRaph/status/1427649830491496448)
+- [Love this piece](https://twitter.com/samwise_v/status/1455958411766546440)
+
+### ML/DS/Math
+
+- [Feature Engineering book](https://bookdown.org/max/FES/)
+- [Boosting algorithm](https://towardsdatascience.com/boosting-algorithms-explained-d38f56ef3f30)
+- [Bayesian Optimization](https://www.tidymodels.org/learn/work/bayes-opt/)
+- [Data Science project - Fantano Review](https://danielbrito.netlify.app/post/2021-07-24-fantano-doesn-t-like-to-dance-a-classification-model-on-needle-drop-s-reviews/)
+- [Data Science project - Thom Yorke](https://www.thompsonanalytics.com/blog/thom-yorke/)
+- [Interpretable ML](https://christophm.github.io/interpretable-ml-book/): definitely will revisit this book when I have to explain ML
+- [Bayesian Resources](https://github.com/satrialoka/bayes-resources)
+- [Intro to Bayesian](https://statswithr.github.io/book/)
+- [Math Youtube Channel](https://www.youtube.com/watch?v=9vKqVkMQHKk&list=PLZHQObOWTQDMsr9K-rj53DwVRMYO3t5Yr&index=3)
+
+### R/coding stuff
+
+- [Shiny UI](https://unleash-shiny.rinterface.com/index.html)
+- [plotly](https://plotly-r.com/)
+- [Code Review](https://google.github.io/eng-practices/review/)
+- [Efficient R programming](https://csgillespie.github.io/efficientR/)
+- [Shannon's R packages](https://www.pipinghotdata.com/talks/2020-10-25-your-first-r-package-in-1-hour/)
+
+### Bio/Medical(?) stuff
+
+- [Medical Research](https://bookdown.org/pdr_higgins/rmrwr/)
+- [Dezi's research](https://www.frontiersin.org/articles/10.3389/fncel.2020.00245/full)
+- [Data Professor](https://www.youtube.com/watch?v=jBlTQjcKuaY&t=482s)
+- [t-SNE Paper Dezi recommended](https://www.nature.com/articles/s41467-019-13056-x)
+- [R Course on gene expression](https://www.udemy.com/course/differential-gene-expression-analysis/)
+- [GeneTonic](http://shiny.imbei.uni-mainz.de:3838/GeneTonic/)
+- [R Consortium](https://www.r-consortium.org/webinars)
+
+### Misc
+
+- [Cool blog](https://jingyis-blog.webflow.io/)
+- [Data viz podcast I've been meaning to listen to](https://dataviztoday.com/shownotes/65)
+- [Another podcast I've been meaning to listen to](https://anchor.fm/open-source-sports/episodes/Grinding-the-Mocks-with-Benjamin-Robinson-e16bu97)
+- [Econ Course](https://github.com/uo-ec607/lectures)
+- [Procrastination](http://www.structuredprocrastination.com/)
+- [Side Hustle](https://www.linkedin.com/learning/side-hustle-strategies-for-data-science-and-analytics-experts)
+
+# 2021 Nov
+
+Hey! So I just came back from a 2 week vacation from Germany! (writing this on 2021-12-09) I guess it's really the first time since I started working full time that I took a proper vacation, and it was fucking great. Berlin was amazing. More than anything, I stepped out of my comfort zone, and tried to talk to as many people as I could. I sat at the bar counters, talking to random people, and so on. Never thought I had it in me lol
+
+On my way back, Air Portugal messed up hard, and I was stuck in MTL for another day, which costed me another day of vacation :( but I made some friends, and got invited to come surf in Portugal (which I will take up on, Joseph!)
+
+Anyways, that was a much needed break, and now I'm recharged to continue my quest to learn package/shiny dev and drug discovery.
+
+### API Package Building Stuff
+
+- [Lots of resources](https://towardsdatascience.com/creating-r-packages-what-you-need-to-know-2a20233b328a)
+- [Hadley's guide](https://cran.r-project.org/web/packages/httr/vignettes/api-packages.html)
+- [Colin's guide](https://colinfay.me/build-api-wrapper-package-r/)
+- [Basics to API](https://zapier.com/learn/apis/chapter-1-introduction-to-apis/)
+- [Julia's Travis guide](https://juliasilge.com/blog/beginners-guide-to-travis/)
+- [Dean's guide to R environment](https://daattali.gitbooks.io/stat545-ubc-github-io/content/bit003_api-key-env-var.html)
+- [Guide to commit messages](https://gist.github.com/robertpainsi/b632364184e70900af4ab688decf6f53)
+
