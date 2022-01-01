@@ -233,3 +233,26 @@ Anyways, that was a much needed break, and now I'm recharged to continue my ques
 - [Dean's guide to R environment](https://daattali.gitbooks.io/stat545-ubc-github-io/content/bit003_api-key-env-var.html)
 - [Guide to commit messages](https://gist.github.com/robertpainsi/b632364184e70900af4ab688decf6f53)
 
+# 2021 Dec
+
+Alright, what did I do in 2021
+
+- Travelled to Berlin before Omicron 
+- Dabbled into rtistry, wrote a couple blog posts
+- Wrote my first R package, rBreakingBad
+- Am working on my first {golem} shiny app, {senTWEETment}
+- Did some r4ds bookclubs (advr, tmwr) - TY all!
+- Re-did my blog theme
+- Tons of golf with my family!
+- Actually gave birthday presents to my friends
+- Shaved my head
+- Got promoted at work
+- Got boosted
+- Finally on Spotify
+- Man. that trip affected me HARD. I wanna live in Europe
+
+Goals for 2022 (right now): 
+- See the world
+- I really want to work with R coders. Love me some shiny apps & package dev
+- I want to use my skillsets in a meaningful way (that I'm proud of!)
+- Write about some unfamilliar rtistry concepts!
