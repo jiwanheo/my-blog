@@ -1,0 +1,515 @@
+---
+title: Pass around data between Shiny modules with R6
+author: Jiwan Heo
+date: '2022-02-06'
+tags:
+  - shiny
+thumbnail: featured.jpg
+thumbnailby: '@jaylotw'
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<p>You have a nice shiny app that manipulates data based on user input, carries out some analysis, and displays the results back to the user. Great! Now it’s time to clean up some code, and break out the ui.R &amp; server.R into modules. Uh-oh, all of a sudden, my app’s not working!</p>
+<p>Does this sound familiar? It definitely happened to me countless of times. Today, I want to talk about an efficient way to modularize your Shiny app using R6.</p>
+<p><img src="intro-meme.png" /></p>
+<div id="setup" class="section level2">
+<h2>Setup</h2>
+<p>Here’s a simple shiny app that takes 2 inputs from the user to manipulate the iris dataset, and generate a table and a graph. Notice the <code>iris_dat</code> reactive that manipulates the data.</p>
+<pre class="r"><code>library(shiny)
+library(dplyr)
+library(ggplot2)
+
+ui &lt;- fluidPage(
+  numericInput(&quot;n_rows&quot;, 
+               &quot;Number of rows to display&quot;,
+               value = 10,
+               min = 1,
+               max = nrow(iris)),
+  
+  numericInput(&quot;multiplier&quot;, 
+               &quot;A random calculation&quot;,
+               value = 1,
+               min = 1,
+               max = 10),
+  
+  tableOutput(&quot;table&quot;),
+  plotOutput(&quot;graph&quot;)
+)
+
+server &lt;- function(input, output, session) {
+  
+  iris_dat &lt;- reactive(
+    iris %&gt;% 
+      head(input$n_rows) %&gt;% 
+      mutate(Sepal.Length = Sepal.Length * input$multiplier)
+  )
+  
+  output$table &lt;- renderTable({
+    iris_dat()
+  })
+  
+  output$graph &lt;- renderPlot({
+    iris_dat() %&gt;% 
+      ggplot(aes(Sepal.Length, Sepal.Width)) +
+      geom_point()
+  })
+}
+
+# shinyApp(ui, server)</code></pre>
+<p><img src="setup.PNG" /></p>
+<p>This app.R works. But you can imagine how long this file would get as you add more components.</p>
+<p>Let’s see how they teach you to modularize your code.</p>
+</div>
+<div id="modularization---classic-reactive" class="section level2">
+<h2>Modularization - classic reactive</h2>
+<p>The above shiny app has 3 components.</p>
+<ul>
+<li>Taking input and manipulating data</li>
+<li>Generate table</li>
+<li>Generate graph</li>
+</ul>
+<p>We’ll turn these components into their own modules.</p>
+<ul>
+<li>mod_manip.R</li>
+<li>mod_table.R</li>
+<li>mod_graph.R</li>
+</ul>
+<p><strong>mod_manip.R</strong></p>
+<ul>
+<li>This module manipulates iris and returns the <code>iris_dat</code> reactive.</li>
+</ul>
+<pre class="r"><code>mod_manip_ui &lt;- function(id) {
+  ns &lt;- NS(id)
+  
+  tagList(
+    numericInput(ns(&quot;n_rows&quot;), 
+                 &quot;Number of rows to display&quot;,
+                 value = 10,
+                 min = 1,
+                 max = 150),
+    
+    numericInput(ns(&quot;multiplier&quot;), 
+                 &quot;A random calculation&quot;,
+                 value = 1,
+                 min = 1,
+                 max = 10)
+  )
+}
+
+mod_manip_server &lt;- function(id) {
+  moduleServer(id, function(input, output, session) {
+    
+    iris_dat &lt;- reactive(
+      iris %&gt;% 
+        head(input$n_rows) %&gt;% 
+        mutate(Sepal.Length = Sepal.Length * input$multiplier)
+    )
+    
+    return(iris_dat)
+  })
+}</code></pre>
+<p><strong>mod_table.R</strong></p>
+<ul>
+<li>This module takes a <code>dat</code> argument in the server, and displays it as a table in the UI. Notice we’re invoking <code>dat()</code>, as we would with any other reactive.</li>
+</ul>
+<pre class="r"><code>mod_table_ui &lt;- function(id) {
+  ns &lt;- NS(id)
+  tableOutput(ns(&quot;table&quot;))
+}
+
+mod_table_server &lt;- function(id, dat) {
+  moduleServer(id, function(input, output, session) {
+    
+    output$table &lt;- renderTable({
+      dat()
+    })
+    
+  })
+}</code></pre>
+<p><strong>mod_graph.R</strong></p>
+<ul>
+<li>This is the same thing as <code>mod_table</code>, but with a plot.</li>
+</ul>
+<pre class="r"><code>mod_graph_ui &lt;- function(id) {
+  ns &lt;- NS(id)
+  plotOutput(ns(&quot;graph&quot;))
+}
+
+mod_graph_server &lt;- function(id, dat) {
+  moduleServer(id, function(input, output, session) {
+    
+    output$graph &lt;- renderPlot({
+      dat() %&gt;% 
+        ggplot(aes(Sepal.Length, Sepal.Width)) +
+        geom_point()
+    })
+    
+  })
+}</code></pre>
+<p>Putting these all together, our app.R now looks a lot more readable:</p>
+<pre class="r"><code>ui &lt;- fluidPage(
+  mod_manip_ui(&quot;mod_manip_1&quot;),
+  mod_table_ui(&quot;mod_table_1&quot;),
+  mod_graph_ui(&quot;mod_graph_1&quot;)
+)
+
+server &lt;- function(session, input, output) {
+  iris_dat &lt;- mod_manip_server(&quot;mod_manip_1&quot;)
+  mod_table_server(&quot;mod_table_1&quot;, dat = iris_dat)
+  mod_graph_server(&quot;mod_graph_1&quot;, dat = iris_dat)
+}
+
+# shinyApp(ui, server)</code></pre>
+<p><img src="module1.PNG" /></p>
+<p>Great start! We now have 3 modules that each represent a component of our Shiny app. This app still works, because the reactivity chain is respected across modules.</p>
+<p>You can definitely stop here and call it a day. But if you want to take it a little further, think about these points:</p>
+<ul>
+<li>If you want to access <code>input$multiplier</code> in <code>mod_table_server</code>, how do you do it?</li>
+<li>How do you make sure the <code>iris_dat</code> is calculated correctly, and passed correctly to other modules?</li>
+</ul>
+<p>While these are definitely doable tasks, they require a little more work.</p>
+<ul>
+<li>Have <code>mod_manip_server</code> return two things, the <code>input$multipler</code>, as well as <code>iris_data.</code> Then have <code>mod_table_server</code> receive another argument <code>multiplier</code></li>
+<li>Manually check the app, or use <code>shiny::testServer</code> to test the server logic.</li>
+</ul>
+<p>Buuuuuuuuuuuuuuuuut,</p>
+<p>What if we used R6?</p>
+<ul>
+<li>Access the <code>multiplier</code> public field in an R6 object, from anywhere!</li>
+<li>Use <code>test_that</code> framework to test the logic automatically.</li>
+</ul>
+</div>
+<div id="modularization---r6" class="section level2">
+<h2>Modularization - R6</h2>
+<p><img src="r6-meme.jpg" style="width:50.0%" /></p>
+<p>R6 is an object oriented programming system that can hold data and functions. It’s useful because when these data fields are modified inside a module, these modified values are available in the global environment. This means we can hold the entire data reading/manipulating/outputting process inside a single object, and interact with it from anywhere.</p>
+<p><code>R6::R6Class</code> is the only function you use. At minimum, it takes as arguments, the class name, and a list of information (data and functions), that can be read and written from anywhere.</p>
+<pre class="r"><code>ExampleR6 &lt;- R6::R6Class(
+  &quot;ExampleR6&quot;,
+  public = list(
+    name = &quot;Jiwan&quot;
+  )
+)</code></pre>
+<p>You can create a new instance of this object, by :</p>
+<pre class="r"><code>example1 &lt;- ExampleR6$new()
+example1</code></pre>
+<pre><code>## &lt;ExampleR6&gt;
+##   Public:
+##     clone: function (deep = FALSE) 
+##     name: Jiwan</code></pre>
+<p>Ignore that “clone” thing, what’s important is that there’s a field named, “name”, with a value “Jiwan”.</p>
+<p>You can interact with it like so:</p>
+<pre class="r"><code>example1$name &lt;- &quot;Not Jiwan&quot;
+example1</code></pre>
+<pre><code>## &lt;ExampleR6&gt;
+##   Public:
+##     clone: function (deep = FALSE) 
+##     name: Not Jiwan</code></pre>
+<p>That’s about all you need to know. let’s dive straight into using this in Shiny modules.</p>
+<div id="r6-example-app" class="section level3">
+<h3>R6 Example app</h3>
+<p>To use R6 in your modules, all you have to do is create an instance of the R6 object, and pass them to the desired modules’ server functions. Notice the <code>r6</code> arguments in the 2 modules below.</p>
+<p><code>mod_1</code> takes a text input from user, and when actionButton is pressed, it updates r6’s name field.</p>
+<pre class="r"><code>mod_1_ui &lt;- function(id) {
+  ns &lt;- NS(id)
+  
+  tagList(
+    textInput(ns(&quot;input_name&quot;), &quot;What&#39;s your name?&quot;),
+    actionButton(ns(&quot;go&quot;), &quot;Go!&quot;)
+  )
+}
+
+mod_1_server &lt;- function(id, r6) {
+  moduleServer(id, function(input, output, session) {
+    observeEvent(input$go, {
+      r6$name &lt;- input$input_name
+      print(r6$name) # Print to console the r6&#39;s name field
+    })
+  })
+}</code></pre>
+<p><code>mod_2</code> prints out the r6’s name field.</p>
+<pre class="r"><code>mod_2_ui &lt;- function(id) {
+  ns &lt;- NS(id)
+  
+  textOutput(ns(&quot;output_name&quot;))
+}
+
+mod_2_server &lt;- function(id, r6) {
+  moduleServer(id, function(input, output, session) {
+    renderText(r6$name)
+  })
+}</code></pre>
+<p>Now if you run this Shiny app…</p>
+<pre class="r"><code>ui &lt;- fluidPage(
+  mod_1_ui(&quot;mod_1&quot;),
+  mod_2_ui(&quot;mod_2&quot;)
+)
+
+server &lt;- function(session, input, output) {
+  
+  # Create an instance of the R6 class
+  hello_r6 &lt;- ExampleR6$new()
+  
+  # Pass the instance of R6 to the modules.
+  mod_1_server(&quot;mod_1&quot;, r6 = hello_r6)
+  mod_2_server(&quot;mod_2&quot;, r6 = hello_r6)
+}
+
+# shinyApp(ui, server)</code></pre>
+<p>It doesn’t work.</p>
+<p><img src="custom-reactivity1.gif" /></p>
+<p>Why isn’t the textOutput updating, even though r6 is working (printing in the console correctly)?</p>
+</div>
+<div id="custom-reactivity" class="section level3">
+<h3>Custom Reactivity</h3>
+<p>It’s because <code>mod_2</code> has no idea that r6 is being updated, because the two modules are not connected by a reactivity.</p>
+<p>This is when <a href="https://github.com/ColinFay/gargoyle">{gargoyle}</a> comes in.</p>
+<p>{gargoyle} has three main functions, <code>init()</code>, <code>trigger()</code>, <code>watch()</code>. The main idea is painfully clever. <code>init</code> sets a numeric reactiveVal to the session, <code>trigger</code> adds +1 to the reactiveVal, and <code>watch</code> listens to this event.</p>
+<p>That’s literally it.</p>
+<p>What’s good about this, is that we can control/set off the reactivity exactly when we want it, across modules.</p>
+<p>The source code is really short, so you can just define those functions on your own if you don’t want another package dependency, like I’ve done in my <a href="https://github.com/jiwanheo/senTWEETment/blob/master/R/utils_trigger.R">most recent Shiny app.</a></p>
+<p>Now, let’s re-visit the above example.</p>
+<pre class="r"><code>mod_1_ui &lt;- function(id) {
+  ns &lt;- NS(id)
+  
+  tagList(
+    textInput(ns(&quot;input_name&quot;), &quot;What&#39;s your name?&quot;),
+    actionButton(ns(&quot;go&quot;), &quot;Go!&quot;)
+  )
+}
+
+mod_1_server &lt;- function(id, r6) {
+  moduleServer(id, function(input, output, session) {
+    observeEvent(input$go, {
+      r6$name &lt;- input$input_name
+      
+      gargoyle::trigger(&quot;change_name&quot;) # Tell mod_2 to update, everytime input$go is clicked
+      
+      print(r6$name)
+    })
+  })
+}</code></pre>
+<pre class="r"><code>mod_2_ui &lt;- function(id) {
+  ns &lt;- NS(id)
+  
+  textOutput(ns(&quot;output_name&quot;))
+}
+
+mod_2_server &lt;- function(id, r6) {
+  moduleServer(id, function(input, output, session) {
+    
+    # watch for the trigger in from mod_1
+    observeEvent(gargoyle::watch(&quot;change_name&quot;), {
+      renderText(r6$name)
+    })
+  })
+}</code></pre>
+<pre class="r"><code>ui &lt;- fluidPage(
+  mod_1_ui(&quot;mod_1&quot;),
+  mod_2_ui(&quot;mod_2&quot;)
+)
+
+server &lt;- function(session, input, output) {
+  second_r6 &lt;- ExampleR6$new()
+  
+  # Set up the initial trigger
+  gargoyle::init(&quot;change_name&quot;)
+  
+  mod_1_server(&quot;mod_1&quot;, r6 = second_r6)
+  mod_2_server(&quot;mod_2&quot;, r6 = second_r6)
+}
+
+# shinyApp(ui, server)</code></pre>
+<p><img src="custom-reactivity2.gif" /></p>
+<p>Yay! It’s working!! 🎉 Pretty cool huh?</p>
+<p>Please refer to <a href="https://adv-r.hadley.nz/r6.html#r6">Advanced R chapter</a>, and <a href="https://engineering-shiny.org/common-app-caveats.html#building-triggers-and-watchers">Engineering Shiny chapter</a> for the details I didn’t cover here.</p>
+<p>Let’s dive back into the iris problem.</p>
+</div>
+</div>
+<div id="implementation" class="section level2">
+<h2>Implementation</h2>
+<p>Armed with this knowledge from above, our strategy to modularize the iris app is:</p>
+<ul>
+<li>Have all module server functions take as argument, an r6 object</li>
+<li>Modules interact directly with the r6
+<ul>
+<li><code>mod_manip</code> updates r6, and trigger reactive events</li>
+<li><code>mod_table</code> &amp; <code>mod_graph</code> listen for changes, to retrieve data from r6 when needed</li>
+</ul></li>
+<li>Create an instance of the R6 class in server.R, and call all the modules with it</li>
+</ul>
+<p>Here’s the R6 definition we’ll use for the iris app:</p>
+<pre class="r"><code>IrisR6 &lt;- R6::R6Class(
+  &quot;IrisR6&quot;,
+  public = list(
+    n_rows = NULL,
+    multiplier = NULL,
+    orig_data = iris,
+    res_data = NULL,
+    manip_data = function(dat) {
+      dat %&gt;% 
+        head(self$n_rows) %&gt;% 
+        mutate(Sepal.Length = Sepal.Length * self$multiplier)
+    }
+  )
+)</code></pre>
+<ul>
+<li>The first three fields represent the components of <code>mod_manip</code>,</li>
+<li>The function <code>manip_data</code> replicates the data manipulating logic. We’ll call this from <code>mod_manip</code></li>
+<li>And we’ll save the resulting dataframe in to <code>res_data</code> field from the same module</li>
+</ul>
+<p><strong>mod_manip.R</strong></p>
+<ul>
+<li>Added an actionButton to the UI, to make it explicit when we want to update r6</li>
+<li>The server function now takes <code>r6</code> as an argument, instead of <code>dat</code>.</li>
+<li>When “go” is pressed, we save the parameters to <code>r6</code>, execute the <code>manip_data</code> function, and save the result into itself.</li>
+<li>Trigger the “update_iris” event</li>
+</ul>
+<pre class="r"><code>mod_manip_ui &lt;- function(id) {
+  ns &lt;- NS(id)
+  
+  tagList(
+    numericInput(ns(&quot;n_rows&quot;), 
+                 &quot;Number of rows to display&quot;,
+                 value = 10,
+                 min = 1,
+                 max = 150),
+    
+    numericInput(ns(&quot;multiplier&quot;), 
+                 &quot;A random calculation&quot;,
+                 value = 1,
+                 min = 1,
+                 max = 10),
+    actionButton(ns(&quot;go&quot;), &quot;Go!&quot;)
+  )
+}
+
+mod_manip_server &lt;- function(id, r6) {
+  moduleServer(id, function(input, output, session) {
+    
+    observeEvent(input$go, {
+      r6$n_rows &lt;- input$n_rows
+      r6$multiplier &lt;- input$multiplier
+      
+      new_data &lt;- r6$manip_data(dat = r6$orig_data)
+      r6$res_data &lt;- new_data
+      
+      gargoyle::trigger(&quot;update_iris&quot;)
+    })
+    
+  })
+}</code></pre>
+<p><strong>mod_table.R</strong></p>
+<ul>
+<li>The server function yet again takes <code>r6</code> as argument, rather than <code>dat</code></li>
+<li>I added a textOutput in UI, to demonstrate we can get <code>input$multiplier</code> from anywhere.</li>
+<li>Watch for the “update_iris” event to update output</li>
+<li>Notice we’re not invoking <code>r6$res_data</code> with brackets.</li>
+</ul>
+<pre class="r"><code>mod_table_ui &lt;- function(id) {
+  ns &lt;- NS(id)
+  tagList(
+    textOutput(ns(&quot;text&quot;)),
+    tableOutput(ns(&quot;table&quot;))
+  )
+}
+
+mod_table_server &lt;- function(id, r6) {
+  moduleServer(id, function(input, output, session) {
+    
+    observeEvent(gargoyle::watch(&quot;update_iris&quot;), {
+      
+      output$text &lt;- renderText(paste(&quot;Multiplier:&quot;, r6$multiplier))
+      
+      output$table &lt;- renderTable({
+        req(!is.null(r6$res_data))
+        
+        r6$res_data
+      })
+      
+    })
+  })
+}</code></pre>
+<p><strong>mod_graph.R</strong></p>
+<ul>
+<li>And more of the same thing.</li>
+</ul>
+<pre class="r"><code>mod_graph_ui &lt;- function(id) {
+  ns &lt;- NS(id)
+  plotOutput(ns(&quot;graph&quot;))
+}
+
+mod_graph_server &lt;- function(id, r6) {
+  moduleServer(id, function(input, output, session) {
+    
+    observeEvent(gargoyle::watch(&quot;update_iris&quot;), {
+      
+      output$graph &lt;- renderPlot({
+        req(!is.null(r6$res_data))
+        
+        r6$res_data %&gt;% 
+          ggplot(aes(Sepal.Length, Sepal.Width)) +
+          geom_point()
+      })
+      
+    })
+  })
+}</code></pre>
+<p><strong>ui &amp; server</strong></p>
+<ul>
+<li>I changed the ui layout a little, but nothing else changed.</li>
+<li>In server, <code>IrisR6$new()</code> creates a new instance of the IrisR6 object.</li>
+<li>This r6 object will be passed into the 3 modules.</li>
+<li>“update_iris” custom reactivity event is initialized.</li>
+</ul>
+<pre class="r"><code>ui &lt;- fluidPage(
+  column(12, mod_manip_ui(&quot;mod_manip_1&quot;)),
+  column(6, mod_table_ui(&quot;mod_table_1&quot;)),
+  column(6, mod_graph_ui(&quot;mod_graph_1&quot;))
+)
+
+server &lt;- function(session, input, output) {
+  
+  r6 &lt;- IrisR6$new()
+  gargoyle::init(&quot;update_iris&quot;)
+  
+  mod_manip_server(&quot;mod_manip_1&quot;, r6 = r6)
+  mod_table_server(&quot;mod_table_1&quot;, r6 = r6)
+  mod_graph_server(&quot;mod_graph_1&quot;, r6 = r6)
+}
+
+# shinyApp(ui, server)</code></pre>
+<p>And the app looks solid!</p>
+<p><img src="final.gif" /></p>
+</div>
+<div id="bonus" class="section level2">
+<h2>Bonus</h2>
+<p>Remember that <code>test_that</code> thing I brought up?</p>
+<p>Because we’re not using reactivity, we can test the logic of this Shiny app, just like we would a regular function. This is great especially if your shiny app is built on top of {golem}. Here’s how a test-iris_shiny_app.R might look like (not executed cuz blog)</p>
+<pre class="r"><code>library(testthat)
+test_that(&quot;Iris manipulation works in R6&quot;, {
+  
+  r6 &lt;- MyR6$new()
+  
+  r6$n_rows &lt;- 5
+  r6$multiplier &lt;- 10
+  new_data &lt;- r6$manip_data(dat = r6$orig_data)
+  r6$res_data &lt;- new_data
+  
+  espect_equal(nrow(r6$res_data), 5)
+  espect_equal(max(r6$res_data$Sepal.Length), 79)
+})</code></pre>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<p>There you have it! I hope you learned something from this blog post :)</p>
+<p>For a small shiny app, this may be an overkill, but if you have a shiny app that does a lot of data processing, I recommend using this approach, rather than juggling through that logic in you modules, and having to keep track of it everywhere.</p>
+<p>In this blog post, we learned:</p>
+<ul>
+<li>Do modularize your shiny app!</li>
+<li>Basics of R6 in Shiny</li>
+<li>Custom reactive event with {gargoyle}</li>
+</ul>
+</div>
