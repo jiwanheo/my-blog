@@ -11,6 +11,10 @@ node application with a React front end that interacts with a Postgres database
 through express API. Then, we'll deploy this on AWS EC2, and set it up
 with DNS and SSL to allow access through the web.
 
+We'll focus on how everything fits in together, rather than, for example, diving
+really deep into a single component, for example, how to use the useEffect hook
+in React.
+
 ## Tech stack
 
 ### OS
