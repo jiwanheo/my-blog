@@ -182,26 +182,33 @@ going to set up a database. I followed the
 [documentation](https://www.postgresql.org/download/linux/ubuntu/) and ran the 
 code they have there on the WSL terminal.
 
-If you're able to run `sudo -i -u postgres` to open a postgres shell, you've 
+If you're able to run `sudo -i -u postgres` to log in as postgres user, you've 
 installed it correctly.
 
 ![](postgres-install.png)
 
-Now, let's create a database. I followed this [tutorial](https://www.postgresql.org/docs/current/tutorial-createdb.html).
+Now, let's create a database called mydb, and within it, a table called 
+bookmarks. It will have just 2 columns, `ID`, and `bookmark`. 
+We'll fill it with one row of data.
 
 ![](postgres-create-db.png)
 
-I'll go ahead and create a role for this db, and grant all access. Run the 
+I'll go ahead and create a role for this db, and grant access. Run the 
 following code while you're in `mydb`
 
 ```
 CREATE ROLE mydb_role WITH LOGIN PASSWORD 'some_password';
-GRANT ALL PRIVILEGES ON DATABASE "mydb" TO mydb_role;
+GRANT SELECT, UPDATE, INSERT ON bookmarks TO mydb_role;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO mydb_role;
 ```
+
+Make sure you're in the mydb database (the terminal indicates `mydb=#`). If not, 
+you can check it out with `\c mydb` 
 
 ![](postgres-role.png)
 
-You can log in as mydb_role user by running 
+Now back out of the psql shell, by running `\q`. We're essentially logging out
+as `postgres` role. Now, let's log in as `mydb_role` role by running 
 
 `psql -h localhost -d mydb -U mydb_role`
 
@@ -209,6 +216,12 @@ Which means you'll connect to the localhost server **h**ost, mydb **d**atabase,
 as mydb_role **u**ser
 
 ![](postgres-login.png)
+
+Finally, let's check if the `mydb_role` can read/write to the `bookmarks` db.
+
+![](postgres-role-access.png)
+
+Looks good to me!!
 
 ## DB <-> API
 
