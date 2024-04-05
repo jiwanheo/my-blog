@@ -7,23 +7,27 @@ DisableComments: no
 ---
 
 In this post, we'll make a simple bookmark app. Users will be able to save a URL
-of a webpage they like, and view it later through this app!
+of a webpage they like, and view it later through this app! You'll learn how to 
+set up a postgres database, hook it up to express API server, which the react 
+app will communicate through Axios client.
 
-Users will see 3 things in this app
+UI-wise, users will see 3 things in this app
 
 - A form to enter and save URL
-- A front page UI for seeing the most recent bookmark
+- A text UI to see the most recent bookmark
 - A table UI for seeing all the bookmarks
 
-So this is 1 POST request, and 2 GET requests - one for seeing the latest 
-bookmark, and another to query n number of bookmarks (maybe this can be one, 
-with parameter).
+So this is 1 POST request, and 2 GET requests that we'll have to implement - 
+one for seeing the latest bookmark, and another to query n number of bookmarks
+(maybe this can be one endpoint with parameter).
 
 ## Set up
 
 Let's use vite as our build tool, and start a project called "bookmark-app". Run
 
-`npm create vite@latest bookmark-app`. 
+```
+npm create vite@latest bookmark-app
+```
 
 It's going to ask to install package and select
 a few options. I'm not going to do anything fancy and go react/javascript.
@@ -37,11 +41,12 @@ correctly!
 
 ## React app
 
-Let's open this directory in vscode and do some dev'ing. Run `code .`
+Let's open this directory in vscode and do some dev'ing. From the WSL terminal, 
+run `cd bookmark-app` followed by `code .`
 
 ![](vite-vscode.png)
 
-Let's clear the content of App.jsx, and replace it with this code. 
+Let's clear the content of src/App.jsx, and replace it with this code. 
 
 ```
 import { useState } from 'react'
@@ -75,23 +80,26 @@ function App() {
 export default App
 ```
 
-And if you run `npm run dev`, you should see a page with a title, a form to 
-submit some text. When submitted, you should get an alert of what the text is.
+We created a form with an input value. Upon typing in the textbox, the 
+`bookmark` value will be updated, and when the submit button is clicked, 
+we alert the value of `bookmark`.
+
+Run `npm run dev` to see it in action.
 
 ![](react-starting-point.png)
 
 ## API backend
 
 We'll use express.js to build the API server, and Axios to make HTTP requests 
-from React to the API.
+from React.
 
 If you don't have these packages, install them with 
 `npm install express` & `npm install axios`
 
 Let's first make a dummy express API and connect it to the app. 
 Make a folder called "backend" and create a file called "server.js" in it. 
-Then, paste the hello-world example. This is an API that sends "hello world", 
-when accessed at the "/api/hello" route out of port 8080.
+Then, paste the hello-world example. This API sends "hello world", when 
+accessed at the "/hello" route out of port 8080.
 
 ```
 import express from 'express'
@@ -112,8 +120,8 @@ app.listen(port, () => {
 
 Now we need to talk to this API from our react app through axios. Under the src
 folder, make a file called "request.js", and paste the following code. This
-listens on the same port as the API server, makes a GET Request at the root 
-route, then just console logs whatever is returned.
+makes a GET Request at the "/hello" route on port 8080, then just console logs
+whatever is returned.
 
 ```
 import axios from 'axios'
@@ -125,12 +133,13 @@ export const apiCall = () => {
 }
 ```
 
-Now that we have the API, and the listener set up, let's set up our react app to 
-talk to it. In App.jsx, import in the axios requester function that we just wrote. 
+Now that we have the API and the axios interfact set up, let's set up our
+react app to talk to it. In App.jsx, import in the axios request function that 
+we just wrote. 
 
 ![](react-use-api.png)
 
-Then we'll write a simple button, that calls the API on click
+Then we'll write a simple button, that calls the API on click.
 
 ![](react-api-test.png)
 
@@ -151,18 +160,14 @@ CORS (Cross Origin Resource Sharing) policy blocks HTTP requests from origins
 that are not the same as the one that's serving the requests. Our react app 
 (Vite) runs on port 5173, and the express server runs on port 8080. Because they
 come from different ports, react app is blocked from making request to the 
-express server.
-
-The benefit of CORS is that it allows your domain to allow reads from another 
+express server. While it's annoying, the benefit of CORS is that it allows your domain to allow reads from another 
 trusted domain.
 
-But right now, we need a way to get around CORS. A common way to do this is to 
-use `cors` package and let the express server know that any requests coming from 
-port 5173 is a good one, and should be allowed. 
+A common way to get around this policy is to use `cors` package and let the 
+express server know that any requests coming from port 5173 is a good one, and
+should be allowed. 
 
-Let's install in first
-
-`npm install cors`
+Let's install in first with `npm install cors`.
 
 Then, on our express `server.js`, I added line 2 and 7-11, which tells our API
 server that any requests coming in from Vite (port 5173) is safe to process.
@@ -182,6 +187,16 @@ going to set up a database. I followed the
 [documentation](https://www.postgresql.org/download/linux/ubuntu/) and ran the 
 code they have there on the WSL terminal.
 
+```
+sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+
+sudo apt-get update
+
+sudo apt-get -y install postgresql
+```
+
 If you're able to run `sudo -i -u postgres` to log in as postgres user, you've 
 installed it correctly.
 
@@ -194,13 +209,31 @@ We'll fill it with one row of data.
 ![](postgres-create-db.png)
 
 I'll go ahead and create a role for this db, and grant access. Run the 
-following code while you're in `mydb`
+following codes while you're in `mydb`. This can be a little confusing, so I'll 
+try my best to explain what each step is doing
 
 ```
 CREATE ROLE mydb_role WITH LOGIN PASSWORD 'some_password';
+```
+> As the root user, we're going to create a role, called "mydb_role", which is
+basically a user who is not the root user
+
+```
 GRANT SELECT, UPDATE, INSERT ON bookmarks TO mydb_role;
+```
+> We're granting a table-specific privileges to perform SELECT, UPDATE, INSERT
+operations to the `mydb_role` role
+
+```
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO mydb_role;
 ```
+
+> Schema is a collection of tables, views, sequences, ... Postgres automatically
+creates a schema called `public` for every new database. If we don't specify a 
+schema name when creating objects, postgres puts it in the `public` schema.
+SEQUENCES are used to populate incrementing (serial) IDs, to use this feature,
+we need to grant USAGE privilege on SEQUENCES, where USAGE allows access to 
+objects contained in it.
 
 Make sure you're in the mydb database (the terminal indicates `mydb=#`). If not, 
 you can check it out with `\c mydb` 
@@ -210,7 +243,9 @@ you can check it out with `\c mydb`
 Now back out of the psql shell, by running `\q`. We're essentially logging out
 as `postgres` role. Now, let's log in as `mydb_role` role by running 
 
-`psql -h localhost -d mydb -U mydb_role`
+```
+psql -h localhost -d mydb -U mydb_role
+```
 
 Which means you'll connect to the localhost server **h**ost, mydb **d**atabase, 
 as mydb_role **u**ser
