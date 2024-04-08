@@ -46,11 +46,6 @@ title = "Linkedin"
 url = "https://www.linkedin.com/in/jiwanheo/"
 
 [[params.socialIcons]]
-icon = "fab fa-twitter"
-title = "Twitter"
-url = "https://twitter.com/jiwanheo"
-
-[[params.socialIcons]]
 icon = "fab fa-github"
 title = "GitHub"
 url = "https://www.github.com/jiwanheo"
