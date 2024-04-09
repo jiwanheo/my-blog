@@ -33,6 +33,9 @@ indexDateFormat = "2006-01-02"
 listDateFormat = "Jan 2"
 singleDateFormat = "2006-01-02"
 
+[permalinks]
+    post = "/:slug/"
+
 ## Math settings
 [params.math]
 enable = false  # options: true, false. Enable math support globally, default: false. You can always enable math on per page.
