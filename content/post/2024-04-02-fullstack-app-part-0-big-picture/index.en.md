@@ -61,7 +61,7 @@ We'll be using AWS EC2.
 
 ## Let's dive in!
 
-With that out of the way, let's go to our [first post](https://jiwanheo.rbind.io/post/2024-04-02-fullstack-app-part-1-react-frontend/), 
+With that out of the way, let's go to our [first post](https://jiwanheo.rbind.io/fullstack-app-part-1/), 
 where will make the 
 full-stack React application!
 

@@ -6,7 +6,7 @@ date: '2024-04-02'
 DisableComments: no
 ---
 
-This is Part 1 of my Fullstack app series. If you haven't read the [previous part]("https://jiwanheo.rbind.io/post/2024-04-02-fullstack-app-part-0-big-picture/"), 
+This is Part 1 of my Fullstack app series. If you haven't read the [previous part]("https://jiwanheo.rbind.io/fullstack-app-part-0/"), 
 where I outline what we'll do with the project, please make sure to check it out before this one!
 
 In this post, we'll make a simple bookmark app. Users will be able to save a URL
