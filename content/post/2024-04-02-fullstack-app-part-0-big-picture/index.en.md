@@ -41,7 +41,9 @@ As mentioned before, we'll make a node app.
 So we'll need to install node. They recommend using 
 [nvm](https://github.com/nvm-sh/nvm). On WSL terminal, run
 
-`curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash`
+```
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash`
+```
 
 Close and re-open the terminal, and run `nvm -v` to see if it installed 
 correctly. You should see something like this.
