@@ -1,6 +1,7 @@
 ---
-title: 'Fullstack app [Part 1]: React frontend'
+title: 'Fullstack app [Part 1]: React app'
 author: Jiwan Heo
+slug: fullstack-app-part-1
 date: '2024-04-02'
 DisableComments: no
 ---
