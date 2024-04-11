@@ -3,6 +3,7 @@ title: 'Fullstack App [Part 2]: Deployment'
 author: Jiwan Heo
 date: '2024-04-09'
 slug: fullstack-app-part-2
+draft: true
 DisableComments: no
 ---
 
@@ -179,6 +180,19 @@ sudo systemctl enable postgresql
 ```
 ![](postgres-enable.png)
 
+### Expose localhost
+
+There's just one more thing that we have to do, and that's exposing the localhost
+to the local network. So far, all we've been doing runs on localhost. Meaning, if 
+someone else wanted to access whatever's running (AKA me, over the internet into
+whatever's running on VM), we wouldn't be able to, because from outside, we don't
+know what localhost is.
+
+We can get around this by using `--host` option to our `vite` call, when we launch
+the app via `npm run start`. Open the package.json file, and add the `--host` flag
+
+![](expose-localhost.png)
+
 ### Copy app code to VM
 
 Now, I want to put the React app code into this virtual machine, so I can run it 
@@ -243,5 +257,11 @@ Ok, now, let's get the public IP address for this VM, which can be found on the
 
 ![](public-ip.png)
 
-Now, if I go to chrome, and type `18.117.170.169:5173`, we're able to see the 
-app! (Your address will be different)
+Now, if I go to chrome, and type `http://18.191.178.151:5173`, we're able to see the 
+app! (Your address will be different) 
+
+![](quick-win.png)
+
+It's great we can get the app to work, but it's not done yet. Notice how the database
+fetch didn't work, and we don't see any bookmarks. This is because of that localhost 
+thing.
