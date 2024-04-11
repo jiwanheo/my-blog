@@ -739,6 +739,6 @@ In this blog post, we looked at how to set up a full-stack Node.js app with
 Postgres db, Express API server, and a React frontend with Axios client, using
 Vite local development server.
 
-Here's the [Github repo]("https://github.com/jiwanheo/bookmark-app") of the full thing.
+Here's the [Github repo]("https://github.com/jiwanheo/bookmark-app/tree/part1") of the full thing.
 
 In the next tutorial, we'll be looking at deploying this app on Amazon EC2.
