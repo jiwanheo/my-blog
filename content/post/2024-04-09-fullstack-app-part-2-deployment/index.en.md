@@ -264,4 +264,103 @@ app! (Your address will be different)
 
 It's great we can get the app to work, but it's not done yet. Notice how the database
 fetch didn't work, and we don't see any bookmarks. This is because of that localhost 
-thing.
+thing. That's enough to see if the app is functioning on EC2. We'll stop here, and
+start setting up the reverse proxy and backend server.
+
+## PM2 
+
+pm2 is a process manager. We'll use pm2 to start/restart the API server, instead 
+of running it in the terminal ourselves. Run
+
+```
+npm install pm2 -g
+```
+
+Let's point pm2 to the location of our server.js file (using the name flag to
+name it)
+
+```
+pm2 start ~/bookmark-app/backend/server.js --name bookmark-app
+```
+
+![](pm2.png)
+
+We'll configure pm2 to automatically startup the process after a reboot. Running
+this command will give you some command to run. 
+
+```
+pm2 startup
+```
+
+![](pm2-command.png)
+
+Run it.
+
+After it runs, we can check if it's running with
+
+```
+pm2 status
+```
+
+![](pm2-confirm.png)
+
+Save the current list of processes so that the same processes are started during 
+bootup.
+
+![](pm2-save.png)
+
+## Deploy frontend via nginx
+
+Go to `frontend` folder, and run `npm run build`. This will create a finalized
+version of the app at `dist` folder, that we'll point nginx to.
+
+Nginx is a web server that can also be used as a reverse proxy.
+
+Install nginx
+
+```
+sudo apt install nginx -y
+sudo systemctl enable nginx
+```
+
+Each site that uses nginx needs a config block setup. The config files lives in
+`/etc/nginx/sites-available`, where any requests that don't have their
+own block will be served with default options. Let's just edit the default setting.
+
+```
+cd /etc/nginx/sites-available
+```
+
+This file is linked to /etc/nginx/sites-enabled, which nginx includes in to 
+construct the /etc/nginx/nginx.conf file.
+
+Open the default file with Nano. Once in it, hit `alt + n` to show line numbers.
+
+```
+sudo nano default
+```
+
+And change it to look like this. I only changed line 41, but I'll explain what
+the file is doing. This 
+
+![](nginx-config.png)
+
+Line 22-23: Tells nginx to listen for trafic on port 80 (http)
+
+Line 41: Tells nginx the path of the index.html file to serve (our react app)
+
+Line 26: Tells nginx which domain names to listen for. (We don't have any now, 
+so it's just the public IP name)
+
+Line 31-35: Redirects all traffic to any path other than `/` to `/`.
+
+Line 37-44: Tellx nginx to redirect the `/api` to localhost:8080, where our 
+Express API runs.
+
+Now, enable the new site with
+
+```
+sudo ln -s /etc/nginx/sites-available/bookmark-app /etc/nginx/sites-enabled/
+systemctl restart nginx
+```
+
