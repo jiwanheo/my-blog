@@ -8,10 +8,14 @@ DisableComments: no
 ---
 
 Hello! This is a continuation of my series of making a fullstack Node app. In the
-last [post](https://jiwanheo.rbind.io/fullstack-app-part-1/), we made a 
-functioning Node app, that saves and retrieves bookmarks. In this post, we'll 
+[last post](https://jiwanheo.rbind.io/fullstack-app-part-1/), we made a 
+functioning Node app that saves and retrieves bookmarks. In this post, we'll 
 be deploying this app to the AWS EC2 cloud, so people can access it from the 
 internet.
+
+A quick heads-up, the IP address of my VM will be inconsistent between screenshots
+because I rebooted while writing this blog quite a bit, but it's not an important 
+detail, so nothing to worry about!
 
 ## AWS EC2 Setup
 
@@ -74,7 +78,7 @@ We'll connect via SSH client.
 ![](ec2-connect2.png)
 
 But first, open the WSL terminal and move the keypair.pem file from windows to 
-the WSL file system.
+the WSL file system's `~/.ssh` directory.
 
 ```
 sudo mv /mnt/c/Users/jiwan/Downloads/jiwan-keypair.pem ~/.ssh/jiwan-keypair.pem
@@ -91,7 +95,7 @@ ssh -i "jiwan-keypair.pem" ubuntu@ec2-18-117-170-169.us-east-2.compute.amazonaws
 ```
 Annnnnd, we're in. You can see the terminal changed to Ubuntu at the IP address 
 of the VM. Anything I run in this terminal, isn't running on my laptop anymore, 
-instead it'll run on the AWS VM. How cool!
+instead it'll run on the AWS VM.
 
 ![](ec2-connect3.png)
 
@@ -115,7 +119,7 @@ It just means it'll use the most updated versions of those packages.
 
 ### Install node & postgres
 
-Now, we'll install node & postgres like we did with out laptop in Part 0 of this 
+Now, we'll install node & postgres like we did with our laptop in Part 0 of this 
 series.
 
 For node:
@@ -130,9 +134,8 @@ Restart the terminal (you'll have to SSH back in), then run
 nvm install node
 ```
 
-Now postgres, we did this in Part 1 blog post. I'm kinda regretting not doing 
-everything in a script, because now I need to run the exact same commands in 
-terminal.
+Now postgres, we did this in Part 1 blog post. I'll do it manually for now, but
+in the next post, we'll automate this process.
 
 Install postgresql
 ```
@@ -184,55 +187,28 @@ sudo systemctl enable postgresql
 
 There's just one more thing that we have to do, and that's exposing the localhost
 to the local network. So far, all we've been doing runs on localhost. Meaning, if 
-someone else wanted to access whatever's running (AKA me, over the internet into
-whatever's running on VM), we wouldn't be able to, because from outside, we don't
-know what localhost is.
+someone else wanted to access whatever's running (AKA me, over the internet), 
+we wouldn't be able to, because from outside, we don't know what localhost is.
 
 We can get around this by using `--host` option to our `vite` call, when we launch
-the app via `npm run start`. Open the package.json file, and add the `--host` flag
+the app via `npm run start`. Open the package.json file, and add the `--host` flag.
+Once done, push this up in a git repository.
+
+This is just temporary, to see everything works. Further into the blog, we'll
+be using nginx to serve everything.
 
 ![](expose-localhost.png)
 
-### Copy app code to VM
+### Git clone code to VM
 
-Now, I want to put the React app code into this virtual machine, so I can run it 
-from there.
-
-We *can* use scp command to do this, but we'll use
-[`rsync`](https://linux.die.net/man/1/rsync). They're basically the same thing, 
-but rsync provides more options in different scenarios, like if some files are 
-already transferred, it will only send the new files, and many more.
-
-```
-rsync --progress -avz --exclude 'node_modules' --exclude '.git' --exclude '.env' \ 
--e "ssh -i ~/.ssh/jiwan-keypair.pem" \
-. ubuntu@ec2-18-117-170-169.us-east-2.compute.amazonaws.com:~/bookmark-app
-```
-
-This command sends everything in the current directory (. in the last line) to
-the ubuntu address in "bookmark-app" directory, using the keypair.pem file, excluding node_modules, .git,
-and .env files.
-
-Please edit the keypair file name, and the Ubuntu address to whatever you have, 
-and run this from your laptop's WSL terminal in the bookmark-app directory, 
-not the VM.
-
-![](copy-to-vm.png)
-
-You should see a long command line messages, but it'll say "created directory ...".
-
-Now SSH into the VM, and run `ls` to see everything is there. If it tells you 
-system reboot is required, run `sudo reboot`
-
-![](copied-to-vm.png)
+Now SSH into the VM, and git clone the repo down.
 
 Now, just like any other new project, we'll start with an `npm install` command.
 
 ![](npm-install.png)
 
-At this point, we're good to launch the app with `npm run start`, but we have to
-do one more thing to see if the app is working. And that's the security setting.
-Head over to the security section, and click on the security group.
+To see if the app is working, let's head over to the security section, 
+and click on the security group.
 
 ![](security.png)
 
@@ -263,14 +239,15 @@ app! (Your address will be different)
 ![](quick-win.png)
 
 It's great we can get the app to work, but it's not done yet. Notice how the database
-fetch didn't work, and we don't see any bookmarks. This is because of that localhost 
-thing. That's enough to see if the app is functioning on EC2. We'll stop here, and
-start setting up the reverse proxy and backend server.
+fetch didn't work, and we don't see any bookmarks. This is because our react app
+is not able to communicate to the API server over localhost. 
+That's enough to see if the app is functioning on EC2. We'll stop here, and
+start serving up our API server and the react app more properly.
 
 ## PM2 
 
-pm2 is a process manager. We'll use pm2 to start/restart the API server, instead 
-of running it in the terminal ourselves. Run
+pm2 is a process manager. We'll use pm2 to manage (start/restart) the API server, 
+instead of running it in the terminal ourselves. Run
 
 ```
 npm install pm2 -g
@@ -309,12 +286,23 @@ bootup.
 
 ![](pm2-save.png)
 
-## Deploy frontend via nginx
+We can see that the API server is working by running.
+
+```
+curl localhost:8080/bookmark
+```
+
+![](pm2-running.png)
+
+## Nginx
+
+Nginx is a web server that can also be used as a web server, or a reverse proxy.
+We'll be using it as a web server that serves our static app file (dist/index.html), 
+and a reverse proxy that points to our API server.
 
 Go to `frontend` folder, and run `npm run build`. This will create a finalized
-version of the app at `dist` folder, that we'll point nginx to.
-
-Nginx is a web server that can also be used as a reverse proxy.
+version of the app `index.html` at `dist` folder. Anytime you make a change to 
+the app, you'll have to re-build it.
 
 Install nginx
 
@@ -323,16 +311,17 @@ sudo apt install nginx -y
 sudo systemctl enable nginx
 ```
 
-Each site that uses nginx needs a config block setup. The config files lives in
-`/etc/nginx/sites-available`, where any requests that don't have their
-own block will be served with default options. Let's just edit the default setting.
+Each site that uses nginx needs a config block setup. The config file lives in
+`/etc/nginx/sites-available`. We'll just be editing the default setting.
 
 ```
 cd /etc/nginx/sites-available
 ```
 
-This file is linked to /etc/nginx/sites-enabled, which nginx includes in to 
+This file is linked to /etc/nginx/sites-enabled, which nginx uses to 
 construct the /etc/nginx/nginx.conf file.
+
+### Front end server
 
 Open the default file with Nano. Once in it, hit `alt + n` to show line numbers.
 
@@ -349,18 +338,82 @@ Line 22-23: Tells nginx to listen for trafic on port 80 (http)
 
 Line 41: Tells nginx the path of the index.html file to serve (our react app)
 
-Line 26: Tells nginx which domain names to listen for. (We don't have any now, 
-so it's just the public IP name)
+Line 44: Tells nginx which files to serve
 
-Line 31-35: Redirects all traffic to any path other than `/` to `/`.
+Line 46: We can define a server name, which we skipped
 
-Line 37-44: Tellx nginx to redirect the `/api` to localhost:8080, where our 
-Express API runs.
+Line 48-52: Redirects all traffic to any path other than `/` to `/`.
 
-Now, enable the new site with
+
+
+Now, enable the new site by restarting it.
 
 ```
-sudo ln -s /etc/nginx/sites-available/bookmark-app /etc/nginx/sites-enabled/
 systemctl restart nginx
 ```
+
+Now if you go to the public IP address, you should see the frontend app! (without
+the API server interaction)
+
+![](preview.png)
+
+### Prod vs Dev API base path
+
+Before we set up the API server communication, remember that we hardcoded API 
+requests to come from "localhost" like this?
+
+![](api-hardcode.png)
+
+This works fine on development environment, because both the react app and the 
+API server runs on the same machine, therefore the localhost is the same thing.
+But in production, we're serving them both from cloud. And the localhost is the 
+loopback address, meaning it points to the user's machine, which obviously
+doesn't have neither our app nor the API server.
+
+To get around this, we'll use environment variables to point to two different 
+locations depending on whether we're viewing the app from development or prod
+environments.
+
+In Node, we get an environment variable called "NODE_ENV" for free. Depending on 
+how we're running node, we'll get different values here (npm run build will 
+assign "production", npm run dev will assign "development").
+
+In places where we hardcoded the API base ("localhost"), we're now going to 
+conditionally define it with an ifelse based on the "NODE_ENV" variable value.
+
+![](api-base.png)
+
+Run `npm run start` to see if the app is running locally. I had to change 
+"127.0.0.1" to "localhost" (check this commit), but you might not have to.
+
+![](runs-locally.png)
+
+Now head over to EC2, pull the commit down. We'll do one more config before 
+everything works.
+
+### API server
+
+Nginx will proxy our API requests, by sending our request (initiated from the 
+react app code, to the API server that pm2 is running locally at port 8080, 
+and returning the response back to us. 
+
+To do this, we need to add another `location`
+block to our nginx config file. Open up the `etc/nginx/sites-available/default`
+file again.
+
+We added line 54-60, which tells nginx to redirect the `/api/` (the apiBase that
+we set for prod environments), to localhost port 8080, and we're setting a 
+bunch of information in the request header, to let the API server know where the 
+request came from.
+
+![](nginx-api.png)
+
+Save this, and restart nginx by running `sudo systemctl restart nginx`.
+
+After this, you should be able to see the app working!
+
+![](nginx-api-works.png)
+
+Success! 
+
 
