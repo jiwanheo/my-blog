@@ -115,7 +115,7 @@ Hit enter, and it'll ask you which services should be restarted. I'm just going
 to restart everything, by selecting with spacebar, and hitting enter, to confirm.
 It just means it'll use the most updated versions of those packages.
 
-![](setup-vm2.png)
+![](setup-vm-2.png)
 
 ### Install node & postgres
 
