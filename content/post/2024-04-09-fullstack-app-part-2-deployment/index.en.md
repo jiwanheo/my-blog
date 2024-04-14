@@ -384,7 +384,8 @@ conditionally define it with an ifelse based on the "NODE_ENV" variable value.
 ![](api-base.png)
 
 Run `npm run start` to see if the app is running locally. I had to change 
-"127.0.0.1" to "localhost" (check this commit), but you might not have to.
+"127.0.0.1" to "localhost" (per [this commit](https://github.com/jiwanheo/bookmark-app/commit/ab23f160fed3a495fa6e26629e96160d253314cf)), 
+but you might not have to.
 
 ![](runs-locally.png)
 
@@ -494,4 +495,99 @@ That's it! This should take about 30 minutes to go through.
 
 ## SSL/HTTPS
 
-The last thing we'll do is setup the SSL certificate, so we can use HTTPS.
+The last thing we'll do is setup the SSL certificate, so we can use HTTPS. We'll
+be using letsencrypt, via certbot. I'll be following 
+[this tutorial](https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-22-04).
+
+Before we do this, we kinda have to fix a lazy thing I did.
+
+Certbot will be using the server block in `/etc/nginx/sites-available/`, and will
+be looking for "server_name" directive. We kinda did everything on the default
+config, and didn't set up a "server_name". Just to make it really obvious, we'll 
+copy the default file into a file on its own, name it "bookmark-app", link it 
+to `/etc/nginx/sites-enabled/` and delete the default file.
+
+![](ssl1.png)
+
+In bookmark-app file, we added the server_name at line 46.
+
+![](ssl2.png)
+
+And we'll link it to the sites-enabled by running this
+
+```
+sudo ln -s /etc/nginx/sites-available/bookmark-app /etc/nginx/sites-enabled/
+```
+
+Now delete the default file in both sites-available and sites-enabled dirs.
+
+```
+sudo rm default
+cd ../sites-enabled
+sudo rm default
+```
+
+Now if we restart nginx with `sudo systemctl restart nginx`, the website should still
+be running. Ok, now that we got that figured out, let's jump back to installing 
+certbot.
+
+Install `snap`
+```
+sudo snap install core; sudo snap refresh core
+```
+
+Install `certbot`
+
+```
+sudo snap install --classic certbot
+```
+
+Link certbot from snap to our environment.
+
+```
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+```
+
+Because we set up the `server_name` directive in the config file, certbot should
+be able to find the correct server block and update it automatically. 
+
+We'll skip the `ufw` step, because we're doing the firewall stuff on EC2.
+
+Now, we have to obtain an SSL certificate. Run
+
+```
+sudo certbot --nginx -d bookmark-app.jiwanheo.xyz -d www.bookmark-app.jiwanheo.xyz
+```
+
+It'll ask for your email, and say yes to a few things. (If you're trying this 
+right after you set up the DNS, it'll likely fail, because it's still being set up)
+
+After this is done, Nginx configuration will now automatically redirect all web 
+requests to https.
+
+The last thing we'll do is to automate the renewal process. Run
+
+```
+sudo certbot renew --dry-run
+```
+
+And that's pretty much it! We successfully set up the SSL certificate on our web application!
+
+## Conclusion
+
+In this post, we set up Amazon EC2 VM instance to be able to access the app over 
+the internet. 
+
+We configured the VM to run a Node app and a postgres db. We cloned down the git 
+repo of our project, and set up the Express API server to run as a process via PM2. 
+We used nginx to serve the static version the react app, configured reverse-proxy 
+so that API requests from the app over port 80 is redirected to the Express API 
+server running on port 8080.
+
+After this, we configured DNS, so that instead of using IPv4 address, the app could
+be accessed with a sensible English name, and finally set up SSL certificate so that
+the app can use secure communication.
+
+Some of the things we did in this post were very manual. In the next post, we'll be
+looking to automate some of these.
+
