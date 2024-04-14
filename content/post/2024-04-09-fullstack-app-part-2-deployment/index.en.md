@@ -3,7 +3,6 @@ title: 'Fullstack App [Part 2]: Deployment'
 author: Jiwan Heo
 date: '2024-04-09'
 slug: fullstack-app-part-2
-draft: true
 DisableComments: no
 ---
 
@@ -14,8 +13,8 @@ be deploying this app to the AWS EC2 cloud, so people can access it from the
 internet.
 
 A quick heads-up, the IP address of my VM will be inconsistent between screenshots
-because I rebooted while writing this blog quite a bit, but it's not an important 
-detail, so nothing to worry about!
+because I rebooted the instance quite a bit while writing this blog, but it's not 
+an important detail, so nothing to worry about!
 
 ## AWS EC2 Setup
 
@@ -68,7 +67,7 @@ virtual machine.
 
 ## Connect to VM
 
-The very next thing we'll do is to connect to the create instance. Hit "Connect
+The very next thing we'll do is to connect to the created instance. Hit "Connect
 to instance".
 
 ![](ec2-connect.png)
@@ -134,8 +133,7 @@ Restart the terminal (you'll have to SSH back in), then run
 nvm install node
 ```
 
-Now postgres, we did this in Part 1 blog post. I'll do it manually for now, but
-in the next post, we'll automate this process.
+Now postgres, we did this in Part 1 blog post. I'll do it manually for now.
 
 Install postgresql
 ```
@@ -188,13 +186,13 @@ sudo systemctl enable postgresql
 There's just one more thing that we have to do, and that's exposing the localhost
 to the local network. So far, all we've been doing runs on localhost. Meaning, if 
 someone else wanted to access whatever's running (AKA me, over the internet), 
-we wouldn't be able to, because from outside, we don't know what localhost is.
+we wouldn't be able to, because from outside, localhost just means their laptop.
 
 We can get around this by using `--host` option to our `vite` call, when we launch
 the app via `npm run start`. Open the package.json file, and add the `--host` flag.
 Once done, push this up in a git repository.
 
-This is just temporary, to see everything works. Further into the blog, we'll
+This is just temporary, to see everything works. Further into this post, we'll
 be using nginx to serve everything.
 
 ![](expose-localhost.png)
@@ -330,7 +328,7 @@ sudo nano default
 ```
 
 And change it to look like this. I only changed line 41, but I'll explain what
-the file is doing. This 
+the file is doing.
 
 ![](nginx-config.png)
 
@@ -395,7 +393,7 @@ everything works.
 ### API server
 
 Nginx will proxy our API requests, by sending our request (initiated from the 
-react app code, to the API server that pm2 is running locally at port 8080, 
+react app code), to the API server that pm2 is running locally at port 8080, 
 and returning the response back to us. 
 
 To do this, we need to add another `location`
@@ -453,14 +451,14 @@ Then fill it with your domain name, and click "Create hosted zone".
 
 Now, you're gonna be able to see the ns record.
 
-!()[create-zone3.png]
+![](create-zone3.png)
 
 We're going to copy these into namecheap.
 
-!()[create-zone4.png]
+![](create-zone4.png)
 
 Click the checkmark, and you're done! We've purchased a domain name, and 
-connected it to the hosted zone on AWS. This change will take about a day to 
+connected it to the hosted zone on AWS. This change will take some time to 
 fully process. We'll still go ahead and set up the record to point to our app, but
 you'll probably have to wait a little to see it take effect.
 
@@ -551,19 +549,23 @@ sudo ln -s /snap/bin/certbot /usr/bin/certbot
 Because we set up the `server_name` directive in the config file, certbot should
 be able to find the correct server block and update it automatically. 
 
-We'll skip the `ufw` step, because we're doing the firewall stuff on EC2.
+We'll skip the `ufw` step, because we're doing the firewall stuff on EC2. Just make
+sure that in security group, you're allowing HTTP/HTTPS access from anywhere.
 
 Now, we have to obtain an SSL certificate. Run
 
 ```
-sudo certbot --nginx -d bookmark-app.jiwanheo.xyz -d www.bookmark-app.jiwanheo.xyz
+sudo certbot --nginx -d bookmark-app.jiwanheo.xyz
 ```
 
 It'll ask for your email, and say yes to a few things. (If you're trying this 
 right after you set up the DNS, it'll likely fail, because it's still being set up)
 
 After this is done, Nginx configuration will now automatically redirect all web 
-requests to https.
+requests to https. Visit http://bookmark-app.jiwanheo.xyz (your equivalent), and
+you should see that it's redirected to https!
+
+![](ssl3.png)
 
 The last thing we'll do is to automate the renewal process. Run
 
