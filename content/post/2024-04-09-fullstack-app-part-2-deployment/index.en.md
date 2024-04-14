@@ -416,4 +416,82 @@ After this, you should be able to see the app working!
 
 Success! 
 
+Now, we don't have too much left! We'll just set up DNS, so we have an easy domain
+name, instead of IPv4 address, and then we'll set up SSL security. 
 
+## DNS
+
+Domain name service maps English names like "google.com" to IP address like
+"192.178.52.174". 
+
+To do this, first, we'll need to buy a domain name. I'll head over to 
+[namecheap.com](https://www.namecheap.com/), and do a search for "jiwanheo". 
+"jiwanheo.xyz" is pretty cheap, so I'll buy that.
+
+![](dns1.png)
+
+Once you're done with the purchase, come into the management page, and look for
+the "nameserver" section. We'll be setting up a custom DNS, through AWS route 53 
+service. This means anytime someone visits jiwanheo.xyz, where they end up will 
+be determined by what we set up on AWS.
+
+![](dns2.png)
+
+Before we do that, we need to create the hosted zone in AWS. Head over to AWS, 
+and search route 53.
+
+![](route-53.png)
+
+On "get started" page, click "Create hosted zone".
+
+![](create-zone.png)
+
+Then fill it with your domain name, and click "Create hosted zone".
+
+![](create-zone2.png)
+
+Now, you're gonna be able to see the ns record.
+
+!()[create-zone3.png]
+
+We're going to copy these into namecheap.
+
+!()[create-zone4.png]
+
+Click the checkmark, and you're done! We've purchased a domain name, and 
+connected it to the hosted zone on AWS. This change will take about a day to 
+fully process. We'll still go ahead and set up the record to point to our app, but
+you'll probably have to wait a little to see it take effect.
+
+Go back to your EC2 instance, and grab the IP address.
+
+![](dns3.png)
+
+Then, come back to route 53, and click "create record"
+
+![](dns4.png)
+
+Then switch the the wizard view
+
+![](dns5.png)
+
+And we'll go with simple routing.
+
+![](dns6.png)
+
+Click "define simple record".
+
+![](dns7.png)
+
+Then we'll name our record. I chose "bookmark-app". Record type should be "A",
+we'll route traffic to an IP address, and paste in the IP address to our instance.
+
+![](dns8.png)
+
+Then, hit "Define simple record" and "Create records".
+
+That's it! This should take about 30 minutes to go through.
+
+## SSL/HTTPS
+
+The last thing we'll do is setup the SSL certificate, so we can use HTTPS.
