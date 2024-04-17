@@ -59,7 +59,13 @@ Success!
 
 ### Cloud (WIP)
 
-We'll be using AWS EC2.
+We'll be using AWS EC2 to host our app. Inside the AWS VM, we'll have the express
+server running as a localhost process via `pm2`, serve up the static react app via
+nginx, and reverse proxy-ing the API requests to the local process with nginx.
+
+### Containerization
+
+We'll be using docker to containerize the whole thing, to make deployment easier.
 
 ## Let's dive in!
 

@@ -590,6 +590,5 @@ After this, we configured DNS, so that instead of using IPv4 address, the app co
 be accessed with a sensible English name, and finally set up SSL certificate so that
 the app can use secure communication.
 
-Some of the things we did in this post were very manual. In the next post, we'll be
-looking to automate some of these.
-
+In the next post, we'll be looking to make the deployment process easier, by
+containerizing our app with Docker.
