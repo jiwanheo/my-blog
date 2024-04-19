@@ -17,3 +17,6 @@ have to clear the volume when we compose down, via `docker-compose down --volume
 When postgres server is running (via `docker-compose up --build`), we can access
 psql instance inside the container, by running in the terminal 
 `docker exec -it process_id bash`.
+
+And in pool, I have to change 'host' argument, to whatever i named the psql
+section in compose.yaml
